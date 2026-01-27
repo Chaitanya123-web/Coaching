@@ -13,13 +13,15 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const data = await api.post("/auth/login", {
-        email,
-        password,
-      });
+      const data = await api.post("/auth/login", { email, password });
 
       localStorage.setItem("token", data.token);
-      window.location.href = "/";
+
+      if (data.user.role === "admin") {
+        window.location.href = "/admin/chats";
+      } else {
+        window.location.href = "/dashboard";
+      }
     } catch (err) {
       setError("Invalid credentials. Please check your email and password.");
     } finally {
