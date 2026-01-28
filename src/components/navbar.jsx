@@ -43,11 +43,11 @@ export default function Navbar() {
           onClick={() => (window.location.href = "/")}
           className="flex items-center gap-3 cursor-pointer group"
         >
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#f2f1d5] text-[#0b2a4a] flex items-center justify-center font-black group-hover:scale-105 transition-transform">
-            T
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#f2f1d5] text-[#0b2a4a] flex items-center justify-center font-black group-hover:scale-105 transition-transform shrink-0">
+            I
           </div>
-          <span className="hidden xs:block text-[#f2f1d5] font-black text-sm sm:text-base">
-            ACADEMY
+          <span className="hidden xs:block text-[#f2f1d5] font-black text-sm sm:text-base uppercase">
+            The Indofrench IAS
           </span>
         </div>
 
@@ -120,7 +120,7 @@ export default function Navbar() {
             onClick={() => setIsOpen(!isOpen)}
             className="md:hidden text-[#f2f1d5]"
           >
-            ☰
+            {isOpen ? "✕" : "☰"}
           </button>
         </div>
 

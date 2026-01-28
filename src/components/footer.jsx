@@ -8,20 +8,22 @@ export default function Footer() {
         {/* MAIN FOOTER CONTENT */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-10 md:gap-8">
           
-          {/* BRAND COLUMN - Spans full width on mobile, 4 columns on desktop */}
+          {/* BRAND COLUMN */}
           <div className="md:col-span-4 space-y-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#f2f1d5] text-[#0b2a4a] flex items-center justify-center font-black text-lg">
-                T
+              <div className="w-8 h-8 rounded-lg bg-[#f2f1d5] text-[#0b2a4a] flex items-center justify-center font-black text-lg shrink-0">
+                I
               </div>
-              <span className="text-xl font-black tracking-tighter uppercase">Academy</span>
+              <span className="text-xl font-black tracking-tighter uppercase">
+                The Indofrench IAS
+              </span>
             </div>
             <p className="text-sm text-[#6fa6b2] leading-relaxed max-w-xs">
               A premium space for dedicated students to master complex concepts through structured, expert-led video batches.
             </p>
           </div>
 
-          {/* QUICK LINKS - 2 columns on desktop, side-by-side with Account on tablet */}
+          {/* QUICK LINKS */}
           <div className="md:col-span-2">
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6fa6b2] mb-4 sm:mb-5">Platform</h3>
             <ul className="space-y-3 text-[13px] font-semibold">
@@ -42,7 +44,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* CONTACT INFO - Spans full width on mobile, 4 columns on desktop */}
+          {/* CONTACT INFO */}
           <div className="md:col-span-4">
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6fa6b2] mb-4 sm:mb-5">Connect</h3>
             <div className="space-y-5">
@@ -68,10 +70,10 @@ export default function Footer() {
 
         </div>
 
-        {/* BOTTOM BAR - Stacked on mobile, row on tablet/laptop */}
+        {/* BOTTOM BAR */}
         <div className="mt-10 sm:mt-12 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
           <p className="text-[9px] sm:text-[10px] font-bold text-[#6fa6b2] uppercase tracking-[0.1em] text-center md:text-left">
-            © {currentYear} ACADEMY ONLINE. BUILT FOR EXCELLENCE.
+            © {currentYear} THE INDOFRENCH IAS. BUILT FOR EXCELLENCE.
           </p>
           
           <div className="flex gap-6 text-[9px] sm:text-[10px] font-bold text-[#6fa6b2] uppercase tracking-[0.1em]">
