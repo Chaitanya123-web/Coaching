@@ -13,6 +13,7 @@ export default function AdminBatches() {
   const [videotitle, setVideotitle] = useState("");
   const [videourl, setVideourl] = useState("");
   const [courseid, setCourseid] = useState("");
+  const [videofile, setVideofile] = useState(null);
 
   const [message, setMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(true);
@@ -50,21 +51,35 @@ export default function AdminBatches() {
     }
   };
 
-  // add video
-  const addvideo = async (e) => {
-    e.preventDefault();
-    try {
-      await api.post("/video/add", {
-        title: videotitle,
-        videourl,
-        course: courseid,
-      });
-      showAlert("Video added to batch successfully!");
-      setVideotitle(""); setVideourl(""); setCourseid("");
-    } catch (err) {
-      showAlert("Failed to add video", false);
+
+const addvideo = async (e) => {
+  e.preventDefault();
+
+  try {
+    const formData = new FormData();
+    formData.append("title", videotitle);
+    formData.append("course", courseid);
+
+    if (videofile) {
+      formData.append("video", videofile); 
+    } else {
+      formData.append("videourl", videourl); 
     }
-  };
+
+    await api.post("/video/add", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    showAlert("Video added successfully!");
+    setVideotitle("");
+    setVideourl("");
+    setVideofile(null);
+    setCourseid("");
+  } catch (err) {
+    showAlert("Failed to add video", false);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-[#f8f7eb] text-[#0b2a4a]">
@@ -177,15 +192,26 @@ export default function AdminBatches() {
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase text-[#2f6f7e] ml-1 mb-2 block tracking-widest">URL (Vimeo/YT)</label>
+                <label className="text-[10px] font-bold uppercase text-[#2f6f7e] ml-1 mb-2 block tracking-widest">
+                  OR Upload Video File
+                </label>
+
                 <input
-                  className="w-full px-4 md:px-5 py-3 md:py-4 bg-[#f8f7eb]/50 border-2 border-transparent focus:border-[#1f4f5a] focus:bg-white rounded-xl md:rounded-2xl outline-none transition-all text-sm md:text-base"
-                  placeholder="https://..."
-                  value={videourl}
-                  onChange={(e) => setVideourl(e.target.value)}
-                  required
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) => setVideofile(e.target.files[0])}
+                  className="w-full text-sm"
                 />
               </div>
+
+              <input
+                className="w-full px-4 md:px-5 py-3 md:py-4 bg-[#f8f7eb]/50 border-2 border-transparent focus:border-[#1f4f5a] focus:bg-white rounded-xl md:rounded-2xl outline-none transition-all text-sm md:text-base"
+                placeholder="https://..."
+                value={videourl}
+                onChange={(e) => setVideourl(e.target.value)}
+                disabled={!!videofile}   
+              />
+
 
               <div>
                 <label className="text-[10px] font-bold uppercase text-[#2f6f7e] ml-1 mb-2 block tracking-widest">Select Batch</label>

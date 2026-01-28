@@ -1,4 +1,5 @@
 import express from "express";
+import { videoUpload } from "../middleware/videoUpload.js";
 import Video from "../models/video.js";
 
 const router = express.Router();
@@ -30,24 +31,49 @@ router.get("/:courseid", async (req, res) => {
 });
 
 /* add video */
-router.post("/add", async (req, res) => {
-  try {
-    const { title, videourl, course } = req.body;
+router.post(
+  "/add",
+  videoUpload.single("video"), // 👈 important
+  async (req, res) => {
+    try {
+      const { title, videourl, course } = req.body;
 
-    if (!title || !videourl || !course) {
-      return res.status(400).json({ message: "all fields required" });
+      if (!title || !course) {
+        return res.status(400).json({ message: "title & course required" });
+      }
+
+      let finalVideoUrl = videourl;
+      let type = "url";
+
+
+      if (req.file) {
+        finalVideoUrl = req.file.path; 
+        type = "cloud";
+      }
+
+      if (!finalVideoUrl) {
+        return res.status(400).json({ message: "video url or file required" });
+      }
+
+      if (req.file && videourl) {
+        return res.status(400).json({
+          message: "Upload either a file OR a URL, not both",
+        });
+      }
+
+      const video = await Video.create({
+        title,
+        videourl: finalVideoUrl,
+        course,
+        type,
+      });
+
+      res.json(video);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "server error" });
     }
-
-    const video = await Video.create({
-      title,
-      videourl,
-      course,
-    });
-
-    res.json(video);
-  } catch (err) {
-    res.status(500).json({ message: "server error" });
   }
-});
+);
 
 export default router;

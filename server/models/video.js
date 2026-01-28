@@ -1,24 +1,21 @@
 import mongoose from "mongoose";
 
-const videoschema = new mongoose.Schema(
+const videoSchema = new mongoose.Schema(
   {
-    title: {
-      type: String,
-      required: true,
-    },
-
-    videourl: {
-      type: String,
-      required: true,
-    },
-
+    title: String,
+    videourl: String,
     course: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Course",
-      required: true,
+    },
+    type: {
+      type: String,
+      enum: ["url", "cloud"],
+      default: "url",
     },
   },
   { timestamps: true }
 );
+
 
 export default mongoose.model("Video", videoschema);

@@ -44,6 +44,7 @@ export default function Video() {
     );
   }
 
+
   return (
     <div className="min-h-screen bg-[#f8f7eb] pt-24 pb-12 sm:pt-32 sm:pb-20 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
@@ -59,10 +60,12 @@ export default function Video() {
         <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
           <Videoplayer
             videourl={video.videourl}
+            type={video.type}        
             title={video.title}
             description={video.description}
           />
         </div>
+
 
         {/* BOTTOM HELP SECTION */}
         <div className="mt-8 flex flex-col sm:flex-row justify-between items-center gap-6 px-4">
