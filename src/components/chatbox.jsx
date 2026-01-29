@@ -11,7 +11,10 @@ export default function Chatbox() {
   };
 
   useEffect(() => {
-    api.get("/chat/student").then(setMessages);
+    api.get("/chat/student").then((data) => {
+      setMessages(Array.isArray(data.messages) ? data.messages : []);
+    });
+
   }, []);
 
   useEffect(scrollToBottom, [messages]);
@@ -72,8 +75,7 @@ export default function Chatbox() {
             </p>
           </div>
         )}
-
-        {messages.map((msg) => (
+          {Array.isArray(messages) && messages.map((msg) => (
           <div
             key={msg._id}
             className={`flex flex-col ${
