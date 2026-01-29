@@ -23,13 +23,14 @@ export default function AdminBatches() {
     const fetchcourses = async () => {
       try {
         const data = await api.get("/course");
-        setCourses(data);
+        setCourses(Array.isArray(data.courses) ? data.courses : []);
       } catch (err) {
         console.error(err);
       }
     };
     fetchcourses();
   }, []);
+
 
   const showAlert = (msg, success = true) => {
     setMessage(msg);
@@ -45,7 +46,8 @@ export default function AdminBatches() {
       showAlert("Course created successfully!");
       setTitle(""); setDescription(""); setPrice("");
       const updated = await api.get("/course");
-      setCourses(updated);
+      setCourses(Array.isArray(updated.courses) ? updated.courses : []);
+
     } catch (err) {
       showAlert("Failed to create course", false);
     }

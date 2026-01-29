@@ -11,7 +11,8 @@ export default function Dashboard() {
     const fetchmycourses = async () => {
       try {
         const data = await api.get("/course");
-        setCourses(data);
+        setCourses(Array.isArray(data.courses) ? data.courses : []);
+
       } catch (err) {
         setError("Unable to load your dashboard. Please try again.");
       } finally {
@@ -72,7 +73,7 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {courses.length === 0 ? (
+        {Array.isArray(courses) && courses.length === 0 ? (
           <div className="bg-white rounded-[2rem] p-10 md:p-20 text-center shadow-xl shadow-black/5 border border-[#0b2a4a]/5">
             <div className="mb-6 text-5xl md:text-6xl animate-bounce">📚</div>
             <h2 className="text-2xl md:text-3xl font-black text-[#0b2a4a] mb-3 tracking-tight">Your shelf is empty</h2>
@@ -87,6 +88,7 @@ export default function Dashboard() {
             </a>
           </div>
         ) : (
+          Array.isArray(courses) && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
             {courses.map((course) => (
               <div key={course._id} className="relative group">
@@ -115,6 +117,7 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
+          )
         )}
       </main>
 

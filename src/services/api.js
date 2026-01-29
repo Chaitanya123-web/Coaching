@@ -1,30 +1,25 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: "/api", // ⭐ MOST IMPORTANT LINE
 });
 
 // attach jwt token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
-// response handler
+// unwrap response
 api.interceptors.response.use(
-  (response) => response, 
+  (response) => response.data,
   (error) => {
-    const message =
-      error?.response?.data?.message ||
-      error?.message ||
-      "Something went wrong";
-    return Promise.reject(message);
+    return Promise.reject(
+      error?.response?.data?.message || "Something went wrong"
+    );
   }
 );
 

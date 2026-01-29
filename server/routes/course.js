@@ -7,7 +7,7 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   try {
     const courses = await Course.find();
-    res.json(courses);
+    res.json({courses});
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }
@@ -22,13 +22,13 @@ router.post("/create", async (req, res) => {
       return res.status(400).json({ message: "all fields required" });
     }
 
-    const course = await Course.create({
+    const courses = await Course.create({
       title,
       description,
       price,
     });
 
-    res.json(course);
+    res.json({courses});
   } catch (err) {
     res.status(500).json({ message: "server error" });
   }

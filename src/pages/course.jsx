@@ -11,32 +11,40 @@ export default function Course() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const loadCourse = async () => {
-      try {
-        const user = await api.get("/auth/me");
-        if (user.role === "admin") {
-          setEnrolled(true);
-          const vids = await api.get(`/video/${courseid}`);
-          setVideos(vids);
-          return;
-        }
-        const status = await api.get(`/enroll/check/${courseid}`);
-        if (status.enrolled) {
-          setEnrolled(true);
-          const vids = await api.get(`/video/${courseid}`);
-          setVideos(vids);
-        } else {
-          setEnrolled(false);
-        }
-      } catch (err) {
-        setEnrolled(false);
-      } finally {
-        setLoading(false);
+useEffect(() => {
+  const loadCourse = async () => {
+    try {
+      const user = await api.get("/auth/me");
+
+      if (user.role === "admin") {
+        setEnrolled(true);
+        const vids = await api.get(`/video/${courseid}`);
+        setVideos(Array.isArray(vids.videos) ? vids.videos : []);
+        return;
       }
-    };
-    loadCourse();
-  }, [courseid]);
+
+      const status = await api.get(`/enroll/check/${courseid}`);
+
+      if (status.enrolled) {
+        setEnrolled(true);
+        const vids = await api.get(`/video/${courseid}`);
+        setVideos(Array.isArray(vids.videos) ? vids.videos : []);
+      } else {
+        setEnrolled(false);
+        setVideos([]);
+      }
+
+    } catch (err) {
+      setEnrolled(false);
+      setVideos([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadCourse();
+}, [courseid]);
+
 
   const enroll = async () => {
     try {

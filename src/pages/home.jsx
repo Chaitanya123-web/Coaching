@@ -12,7 +12,7 @@ export default function Home() {
     const fetchcourses = async () => {
       try {
         const data = await api.get("/course");
-        setCourses(data);
+        setCourses(Array.isArray(data.courses) ? data.courses : []);
       } catch (err) {
         setError("Failed to load courses. Please try again later.");
         console.error(err);
@@ -120,24 +120,29 @@ export default function Home() {
             </div>
           </div>
 
-          {courses.length === 0 ? (
+          {Array.isArray(courses) && courses.length === 0 ? (
             <div className="py-20 text-center bg-white/40 rounded-[2rem] border-2 border-dashed border-[#1f4f5a]/10">
-              <p className="text-lg text-[#2f6f7e] font-medium">No courses available right now.</p>
+              <p className="text-lg text-[#2f6f7e] font-medium">
+                No courses available right now.
+              </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
-              {courses.map((course) => (
-                <div key={course._id} className="h-full">
-                  <Coursecard
-                    id={course._id}
-                    title={course.title}
-                    description={course.description}
-                    price={course.price}
-                  />
-                </div>
-              ))}
-            </div>
+            Array.isArray(courses) && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
+                {courses.map((course) => (
+                  <div key={course._id} className="h-full">
+                    <Coursecard
+                      id={course._id}
+                      title={course.title}
+                      description={course.description}
+                      price={course.price}
+                    />
+                  </div>
+                ))}
+              </div>
+            )
           )}
+
         </div>
       </section>
 

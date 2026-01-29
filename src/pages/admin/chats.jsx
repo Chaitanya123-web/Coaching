@@ -14,23 +14,33 @@ export default function AdminChats() {
   };
 
   useEffect(() => {
-    api.get("/chat/admin/students").then(setStudents);
+    api.get("/chat/admin/students").then((data) => {
+      setStudents(Array.isArray(data.students) ? data.students : []);
+    });
   }, []);
+
 
   useEffect(scrollToBottom, [messages]);
 
   const openChat = async (student) => {
     setActiveStudent(student);
-    const msgs = await api.get(`/chat/admin/${student._id}`);
-    setMessages(msgs);
+    const data = await api.get(`/chat/admin/${student._id}`);
+    setMessages(Array.isArray(data.messages) ? data.messages : []);
   };
+
 
   const send = async () => {
     if (!message.trim()) return;
-    const msg = await api.post(`/chat/admin/send/${activeStudent._id}`, { message });
-    setMessages((p) => [...p, msg]);
+
+    const data = await api.post(
+      `/chat/admin/send/${activeStudent._id}`,
+      { message }
+    );
+
+    setMessages((p) => [...p, data.message]);
     setMessage("");
   };
+
 
   return (
     <div className="flex h-[calc(100vh-80px)] mt-[80px] bg-[#f8f7eb] overflow-hidden font-sans">
