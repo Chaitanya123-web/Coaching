@@ -22,6 +22,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "https://theindofrenchias.vercel.app",
+      "https://theindofrenchias.netlify.app",
       /\.vercel\.app$/
     ],
     credentials: true,
