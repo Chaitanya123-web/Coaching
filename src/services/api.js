@@ -1,37 +1,20 @@
 import axios from "axios";
 
 const api = axios.create({
-  // Fallback to empty string to prevent undefined errors during mapping
-  baseURL: "https://the-indofrench-ias.onrender.com/api",
-  withCredentials: true, // Crucial for cross-domain requests in production
+  // Forcefully pointing to Render if Env fails
+  baseURL: import.meta.env.VITE_API_URL || "https://the-indofrench-ias.onrender.com/api",
+  withCredentials: true,
 });
 
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-
-// services/api.js hardening
 api.interceptors.response.use(
   (response) => {
-    const data = response.data;
-    // If the component expects a list but gets an object error page, 
-    // we return an empty array to prevent the .map() crash.
-    if (typeof data === 'string' && data.includes('<!DOCTYPE')) {
-      return []; 
+    // Agar Render HTML error bhej raha hai toh khali array bhej do crash rokne ke liye
+    if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE')) {
+      return [];
     }
-    return data;
+    return response.data;
   },
-  (error) => {
-    return []; // Return empty array on failure so .map() doesn't crash
-  }
+  (error) => [] // Fallback array on error
 );
 
 export default api;
