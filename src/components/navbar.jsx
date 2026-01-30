@@ -2,26 +2,33 @@ import { useEffect, useState } from "react";
 import api from "../services/api";
 
 export default function Navbar() {
-  const token = localStorage.getItem("token");
+  // Move localStorage into state/useEffect to prevent Vercel build crashes
+  const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
   const [avatar, setAvatar] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    if (!token) return;
+    // Initializing token on mount ensures window/localStorage is defined
+    const storedToken = localStorage.getItem("token");
+    setToken(storedToken);
 
-    api
-      .get("/auth/me")
-      .then((data) => {
-        setUser(data);
-        const saved = localStorage.getItem(`avatar_${data.email}`);
-        if (saved) setAvatar(saved);
-      })
-      .catch(() => {
-        localStorage.removeItem("token");
-        setUser(null);
-      });
-  }, [token]);
+    if (storedToken) {
+      api
+        .get("/auth/me")
+        .then((data) => {
+          setUser(data);
+          const saved = localStorage.getItem(`avatar_${data.email}`);
+          if (saved) setAvatar(saved);
+        })
+        .catch(() => {
+          // If token is invalid, clear it to prevent infinite loop
+          localStorage.removeItem("token");
+          setToken(null);
+          setUser(null);
+        });
+    }
+  }, []);
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -118,7 +125,7 @@ export default function Navbar() {
           {/* MOBILE TOGGLE */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden text-[#f2f1d5]"
+            className="md:hidden text-[#f2f1d5] text-2xl focus:outline-none"
           >
             {isOpen ? "✕" : "☰"}
           </button>
@@ -126,8 +133,7 @@ export default function Navbar() {
 
         {/* MOBILE MENU */}
         {isOpen && (
-          <div className="absolute top-[calc(100%+12px)] left-0 w-full bg-[#0b2a4a] border border-white/10 rounded-2xl p-6 flex flex-col gap-4 md:hidden shadow-2xl">
-
+          <div className="absolute top-[calc(100%+12px)] left-0 w-full bg-[#0b2a4a] border border-white/10 rounded-2xl p-6 flex flex-col gap-4 md:hidden shadow-2xl animate-in fade-in zoom-in duration-200">
             {navLinks.map((link) => (
               <a
                 key={link.name}
@@ -152,20 +158,10 @@ export default function Navbar() {
             {user?.role === "admin" && (
               <a
                 href="/admin/chats"
-                className="text-xs uppercase font-black tracking-widest text-[#f2f1d5]"
-                onClick={() => setIsOpen(false)}
-              >
-                Doubts
-              </a>
-            )}
-
-            {user?.role === "admin" && (
-              <a
-                href="/admin/batches"
                 className="text-xs uppercase font-black tracking-widest text-[#6fa6b2]"
                 onClick={() => setIsOpen(false)}
               >
-                Admin
+                Admin Panel
               </a>
             )}
 

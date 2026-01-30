@@ -4,18 +4,29 @@ import Coursecard from "../components/coursecard";
 import heroimg from "../assets/hero.png";
 
 export default function Home() {
-  const [courses, setCourses] = useState([]);
+  const [courses, setCourses] = useState([]); // Initialized as empty array
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchcourses = async () => {
       try {
-        const data = await api.get("/course");
-        setCourses(Array.isArray(data.courses) ? data.courses : []);
+        const response = await api.get("/course");
+        
+        /**
+         * PRODUCTION SAFETY: Strict Unwrapping
+         * Ensures 'courses' state is always an array.
+         * Handles cases where backend might return { courses: [...] } or an error object.
+         */
+        const actualCourses = Array.isArray(response) 
+          ? response 
+          : (response?.courses || []);
+          
+        setCourses(actualCourses);
       } catch (err) {
+        console.error("Home API Error:", err);
         setError("Failed to load courses. Please try again later.");
-        console.error(err);
+        setCourses([]); // Fallback to empty array to prevent .map crash
       } finally {
         setLoading(false);
       }
@@ -34,20 +45,11 @@ export default function Home() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f2f1d5] px-6 text-center text-red-600 font-medium">
-        {error}
-      </div>
-    );
-  }
-
   return (
     <div className="bg-[#f8f7eb] min-h-screen font-sans selection:bg-[#1f4f5a] selection:text-white">
       
       {/* ================= HERO SECTION ================= */}
       <section className="relative overflow-hidden bg-[#0b2a4a] text-[#f2f1d5] pt-32 pb-20 md:pt-40 md:pb-32 px-4 sm:px-6">
-        {/* Background Decorative Element - Scaled for mobile */}
         <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-72 h-72 md:w-[520px] md:h-[520px] bg-[#1f4f5a] rounded-full blur-[80px] md:blur-[120px] opacity-30 pointer-events-none"></div>
 
         <div className="max-w-7xl mx-auto">
@@ -86,7 +88,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* RIGHT: IMAGE WITH GLOW - Appears first on mobile */}
+            {/* RIGHT: IMAGE */}
             <div className="relative group order-1 lg:order-2">
               <div className="absolute inset-0 bg-[#6fa6b2] rounded-[2rem] blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
               <img
@@ -112,35 +114,28 @@ export default function Home() {
                 Hand-picked batches starting soon. Join a community of dedicated learners.
               </p>
             </div>
-            <div className="hidden md:flex items-center gap-3">
-              <span className="h-px w-16 bg-[#1f4f5a] rounded-full" />
-              <span className="text-[10px] uppercase tracking-[0.2em] text-[#2f6f7e]/80 font-bold">
-                Batch 2026
-              </span>
-            </div>
           </div>
 
-          {Array.isArray(courses) && courses.length === 0 ? (
-            <div className="py-20 text-center bg-white/40 rounded-[2rem] border-2 border-dashed border-[#1f4f5a]/10">
-              <p className="text-lg text-[#2f6f7e] font-medium">
-                No courses available right now.
-              </p>
+          {/* CRITICAL FIX: Ensure Array.isArray before .map() */}
+          {Array.isArray(courses) && courses.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
+              {courses.map((course) => (
+                <div key={course._id} className="h-full">
+                  <Coursecard
+                    id={course._id}
+                    title={course.title}
+                    description={course.description}
+                    price={course.price}
+                  />
+                </div>
+              ))}
             </div>
           ) : (
-            Array.isArray(courses) && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
-                {courses.map((course) => (
-                  <div key={course._id} className="h-full">
-                    <Coursecard
-                      id={course._id}
-                      title={course.title}
-                      description={course.description}
-                      price={course.price}
-                    />
-                  </div>
-                ))}
-              </div>
-            )
+            <div className="py-20 text-center bg-white/40 rounded-[2rem] border-2 border-dashed border-[#1f4f5a]/10">
+              <p className="text-lg text-[#2f6f7e] font-medium">
+                {error ? error : "No courses available right now."}
+              </p>
+            </div>
           )}
 
         </div>

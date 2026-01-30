@@ -3,18 +3,29 @@ import api from "../services/api";
 import Coursecard from "../components/coursecard";
 
 export default function Dashboard() {
-  const [courses, setCourses] = useState([]);
+  const [courses, setCourses] = useState([]); // Initialized as empty array
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchmycourses = async () => {
       try {
-        const data = await api.get("/course");
-        setCourses(Array.isArray(data.courses) ? data.courses : []);
-
+        const response = await api.get("/course");
+        
+        /**
+         * PRODUCTION FIX: Strict Unwrapping
+         * Forces the result into an array format even if backend sends { courses: [...] }
+         * or a single object error message.
+         */
+        const actualCourses = Array.isArray(response) 
+          ? response 
+          : (response?.courses || []);
+          
+        setCourses(actualCourses);
       } catch (err) {
+        console.error("Dashboard Load Error:", err);
         setError("Unable to load your dashboard. Please try again.");
+        setCourses([]); // Fallback to empty array to prevent .map crash
       } finally {
         setLoading(false);
       }
@@ -32,7 +43,7 @@ export default function Dashboard() {
     );
   }
 
-  if (error) {
+  if (error && courses.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f8f7eb] text-red-600 font-medium px-6 text-center">
         {error}
@@ -61,7 +72,7 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 -mt-8 md:-mt-10 mb-20 relative z-20">
         
         {/* Navigation Tabs - Swipeable on mobile */}
-        <div className="flex gap-6 md:gap-8 mb-8 md:mb-12 border-b border-[#0b2a4a]/10 overflow-x-auto pb-1 scrollbar-hide no-scrollbar">
+        <div className="flex gap-6 md:gap-8 mb-8 md:mb-12 border-b border-[#0b2a4a]/10 overflow-x-auto pb-1 no-scrollbar">
           <button className="text-[#0b2a4a] font-black border-b-4 border-[#1f4f5a] pb-3 md:pb-4 whitespace-nowrap text-sm md:text-lg transition-all shrink-0">
             My Enrolled Courses
           </button>
@@ -73,6 +84,7 @@ export default function Dashboard() {
           </button>
         </div>
 
+        {/* PRODUCTION FIX: Array.isArray check before calling .map */}
         {Array.isArray(courses) && courses.length === 0 ? (
           <div className="bg-white rounded-[2rem] p-10 md:p-20 text-center shadow-xl shadow-black/5 border border-[#0b2a4a]/5">
             <div className="mb-6 text-5xl md:text-6xl animate-bounce">📚</div>
@@ -88,11 +100,10 @@ export default function Dashboard() {
             </a>
           </div>
         ) : (
-          Array.isArray(courses) && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
-            {courses.map((course) => (
+            {Array.isArray(courses) && courses.map((course) => (
               <div key={course._id} className="relative group">
-                {/* Premium "Batch" Badge - Responsive size */}
+                {/* Premium "Batch" Badge */}
                 <div className="absolute top-3 right-3 md:top-4 md:right-4 z-20 bg-[#1f4f5a] text-[#f2f1d5] text-[9px] md:text-[11px] font-black px-2.5 py-1 md:px-3 md:py-1.5 rounded-lg uppercase tracking-widest shadow-lg border border-white/10">
                   Enrolled
                 </div>
@@ -106,7 +117,7 @@ export default function Dashboard() {
                   />
                 </div>
 
-                {/* Status hint - Hidden on mobile to keep clean */}
+                {/* Status hint */}
                 <div className="hidden md:flex mt-4 items-center gap-3 px-3 text-[#1f4f5a] text-xs font-black opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 uppercase tracking-tighter">
                   <span className="flex h-2 w-2 relative">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#1f4f5a] opacity-75"></span>
@@ -117,7 +128,6 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-          )
         )}
       </main>
 

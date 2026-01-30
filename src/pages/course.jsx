@@ -6,45 +6,55 @@ export default function Course() {
   const { courseid } = useParams();
   const navigate = useNavigate();
 
-  const [videos, setVideos] = useState([]);
+  const [videos, setVideos] = useState([]); // Initialized as empty array
   const [enrolled, setEnrolled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-useEffect(() => {
-  const loadCourse = async () => {
-    try {
-      const user = await api.get("/auth/me");
+  useEffect(() => {
+    const loadCourse = async () => {
+      try {
+        const user = await api.get("/auth/me");
 
-      if (user.role === "admin") {
-        setEnrolled(true);
-        const vids = await api.get(`/video/${courseid}`);
-        setVideos(Array.isArray(vids.videos) ? vids.videos : []);
-        return;
-      }
+        // ADMIN → always allowed
+        if (user.role === "admin") {
+          setEnrolled(true);
+          const vids = await api.get(`/video/${courseid}`);
+          
+          /**
+           * PRODUCTION FIX: Strict Unwrapping
+           * Ensures we get the array even if wrapped in an object
+           */
+          const actualVideos = Array.isArray(vids) ? vids : (vids?.videos || []);
+          setVideos(actualVideos);
+          return;
+        }
 
-      const status = await api.get(`/enroll/check/${courseid}`);
+        // STUDENT → check enrollment
+        const status = await api.get(`/enroll/check/${courseid}`);
 
-      if (status.enrolled) {
-        setEnrolled(true);
-        const vids = await api.get(`/video/${courseid}`);
-        setVideos(Array.isArray(vids.videos) ? vids.videos : []);
-      } else {
+        if (status.enrolled) {
+          setEnrolled(true);
+          const vids = await api.get(`/video/${courseid}`);
+          
+          // Same safety unwrap here
+          const actualVideos = Array.isArray(vids) ? vids : (vids?.videos || []);
+          setVideos(actualVideos);
+        } else {
+          setEnrolled(false);
+          setVideos([]);
+        }
+      } catch (err) {
+        console.error("Course load failed:", err);
         setEnrolled(false);
         setVideos([]);
+      } finally {
+        setLoading(false);
       }
+    };
 
-    } catch (err) {
-      setEnrolled(false);
-      setVideos([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  loadCourse();
-}, [courseid]);
-
+    loadCourse();
+  }, [courseid]);
 
   const enroll = async () => {
     try {
@@ -64,6 +74,7 @@ useEffect(() => {
     );
   }
 
+  /* NOT ENROLLED */
   if (!enrolled) {
     return (
       <div className="min-h-screen bg-[#f8f7eb] pt-40 px-6">
@@ -86,6 +97,7 @@ useEffect(() => {
     );
   }
 
+  /* ENROLLED / ADMIN VIEW */
   return (
     <div className="min-h-screen bg-[#f8f7eb] pt-32 md:pt-40 pb-20 px-4 sm:px-6">
       <div className="max-w-4xl mx-auto">
@@ -96,11 +108,12 @@ useEffect(() => {
             <h1 className="text-4xl md:text-5xl font-black text-[#0b2a4a] tracking-tighter">Your Curriculum</h1>
           </div>
           <p className="text-[#2f6f7e] font-bold text-sm bg-white px-4 py-2 rounded-full border border-[#0b2a4a]/5 shadow-sm">
-            {videos.length} Lessons Available
+            {videos?.length || 0} Lessons Available
           </p>
         </div>
 
-        {videos.length === 0 ? (
+        {/* CRITICAL FIX: Ensure Array.isArray before calling .map */}
+        {!Array.isArray(videos) || videos.length === 0 ? (
           <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-[#1f4f5a]/30">
             <p className="text-[#2f6f7e] font-bold italic">Curriculum is being updated. Check back soon.</p>
           </div>
@@ -112,13 +125,11 @@ useEffect(() => {
                 onClick={() => navigate(`/video/${video._id}`)}
                 className="group flex flex-col sm:flex-row gap-5 items-center bg-white rounded-3xl p-4 sm:p-5 border border-[#0b2a4a]/5 cursor-pointer hover:shadow-xl hover:border-[#1f4f5a]/20 transition-all duration-300"
               >
-                {/* VIDEO THUMBNAIL (LEFT) */}
                 <div className="w-full sm:w-40 aspect-video bg-[#0b2a4a] rounded-2xl flex items-center justify-center text-[#f2f1d5] text-2xl relative overflow-hidden shrink-0">
                   <span className="relative z-10 group-hover:scale-125 transition-transform duration-500">▶</span>
                   <div className="absolute inset-0 bg-[#1f4f5a] opacity-0 group-hover:opacity-40 transition-opacity"></div>
                 </div>
 
-                {/* CONTENT (RIGHT) */}
                 <div className="flex-1 text-center sm:text-left">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
                     <span className="text-[10px] font-black text-[#6fa6b2] uppercase tracking-widest">Lesson {index + 1}</span>
@@ -131,7 +142,6 @@ useEffect(() => {
                   </p>
                 </div>
 
-                {/* STATUS TAG */}
                 <div className="hidden md:block pr-4">
                    <div className="text-[10px] font-black uppercase tracking-widest text-[#0b2a4a] bg-[#f8f7eb] px-3 py-1 rounded-lg border border-[#0b2a4a]/5">
                      Play

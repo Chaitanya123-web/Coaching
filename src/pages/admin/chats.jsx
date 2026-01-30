@@ -8,56 +8,54 @@ export default function AdminChats() {
   const [message, setMessage] = useState("");
   const chatEndRef = useRef(null);
 
-  // Auto-scroll to bottom of chat
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-
-useEffect(() => {
-  api.get("/chat/admin/students")
-    .then((data) => {
-      const actualArray = Array.isArray(data) ? data : data?.students;
-      setStudents(Array.isArray(actualArray) ? actualArray : []);
-    })
-    .catch((err) => {
-      console.error("API failed to return array:", err);
-      setStudents([]);
-    });
-}, []);
-
-const openChat = async (student) => {
-  setActiveStudent(student);
-  try {
-    const data = await api.get(`/chat/admin/${student._id}`);
-    const actualMessages = Array.isArray(data) ? data : data?.messages;
-    setMessages(Array.isArray(actualMessages) ? actualMessages : []);
-  } catch (err) {
-    setMessages([]);
-  }
-};
-
-
+  useEffect(() => {
+    api.get("/chat/admin/students")
+      .then((data) => {
+        // PRODUCTION FIX: Strict Unwrapping to prevent .map errors
+        const actualArray = Array.isArray(data) ? data : (data?.students || []);
+        setStudents(actualArray);
+      })
+      .catch((err) => {
+        console.error("Fetch failed:", err);
+        setStudents([]); 
+      });
+  }, []);
 
   useEffect(scrollToBottom, [messages]);
 
-  const send = async () => {
-    if (!message.trim()) return;
-
-    const data = await api.post(
-      `/chat/admin/send/${activeStudent._id}`,
-      { message }
-    );
-
-    setMessages((p) => [...p, data.message]);
-    setMessage("");
+  const openChat = async (student) => {
+    setActiveStudent(student);
+    try {
+      const data = await api.get(`/chat/admin/${student._id}`);
+      // PRODUCTION FIX: Handle nested message objects
+      const actualMessages = Array.isArray(data) ? data : (data?.messages || []);
+      setMessages(actualMessages);
+    } catch (err) {
+      setMessages([]);
+    }
   };
 
+  const send = async () => {
+    if (!message.trim()) return;
+    try {
+      const data = await api.post(`/chat/admin/send/${activeStudent._id}`, { message });
+      // Depending on your backend, 'data' might be the message or { message: {} }
+      const newMsg = data.message || data;
+      setMessages((p) => [...p, newMsg]);
+      setMessage("");
+    } catch (err) {
+      console.error("Send failed");
+    }
+  };
 
   return (
     <div className="flex h-[calc(100vh-80px)] mt-[80px] bg-[#f8f7eb] overflow-hidden font-sans">
       
-      {/* LEFT: STUDENT LIST - Hidden on mobile if chat is active */}
+      {/* LEFT: STUDENT LIST */}
       <div className={`
         ${activeStudent ? "hidden md:flex" : "flex"} 
         w-full md:w-80 lg:w-96 bg-[#0b2a4a] flex-col shrink-0 border-r border-white/10
@@ -71,7 +69,7 @@ const openChat = async (student) => {
         </div>
 
         <div className="flex-1 overflow-y-auto no-scrollbar">
-          {Array.isArray(students) ? (
+          {Array.isArray(students) && students.length > 0 ? (
             students.map((s) => (
               <button
                 key={s._id}
@@ -80,21 +78,32 @@ const openChat = async (student) => {
                   ${activeStudent?._id === s._id ? "bg-[#1f4f5a] border-l-4 border-l-[#f2f1d5]" : "hover:bg-white/5"}
                 `}
               >
-                {/* ... content */}
+                <div className="w-10 h-10 rounded-xl bg-[#f2f1d5] text-[#0b2a4a] flex items-center justify-center font-black shrink-0">
+                  {s.name?.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <div className="font-bold text-[#f2f1d5] truncate uppercase tracking-tight text-sm">
+                    {s.name}
+                  </div>
+                  <div className="text-[10px] text-[#6fa6b2] truncate font-medium">
+                    {s.email}
+                  </div>
+                </div>
               </button>
             ))
           ) : (
-            <p className="p-6 text-[#6fa6b2] text-xs uppercase font-bold">No students found</p>
+            <div className="p-10 text-center">
+              <p className="text-[#6fa6b2] text-[10px] font-black uppercase tracking-[0.2em]">No students found</p>
+            </div>
           )}
         </div>
       </div>
 
-      {/* RIGHT: CHAT AREA - Full screen on mobile if chat is active */}
+      {/* RIGHT: CHAT AREA */}
       <div className={`
         ${activeStudent ? "flex" : "hidden md:flex"} 
         flex-1 flex-col bg-[#f8f7eb] relative
       `}>
-        
         {activeStudent ? (
           <>
             {/* Header */}
@@ -108,17 +117,19 @@ const openChat = async (student) => {
                 </svg>
               </button>
               <div className="w-10 h-10 rounded-xl bg-[#0b2a4a] text-[#f2f1d5] flex items-center justify-center font-black">
-                {activeStudent.name.charAt(0).toUpperCase()}
+                {activeStudent.name?.charAt(0).toUpperCase()}
               </div>
               <div>
-                <h3 className="font-black text-[#0b2a4a] uppercase tracking-tight leading-none">{activeStudent.name}</h3>
+                <h3 className="font-black text-[#0b2a4a] uppercase tracking-tight leading-none text-sm md:text-base">
+                  {activeStudent.name}
+                </h3>
                 <span className="text-[9px] font-bold text-[#6fa6b2] uppercase tracking-widest">Active Session</span>
               </div>
             </div>
 
             {/* Messages Thread */}
-            <div className="flex-1 p-6 md:p-10 overflow-y-auto space-y-6 scrollbar-hide">
-              {messages.map((m) => (
+            <div className="flex-1 p-6 md:p-10 overflow-y-auto space-y-6 no-scrollbar">
+              {Array.isArray(messages) && messages.map((m) => (
                 <div key={m._id} className={`flex flex-col ${m.sender === "admin" ? "items-end" : "items-start"}`}>
                   <div className={`
                     max-w-[85%] md:max-w-[70%] px-5 py-3 rounded-2xl text-sm font-medium shadow-sm
@@ -129,7 +140,7 @@ const openChat = async (student) => {
                     {m.message}
                   </div>
                   <span className="text-[8px] font-black uppercase mt-2 tracking-widest text-[#6fa6b2] px-1">
-                    {m.sender === "admin" ? "You (Admin)" : "Student"}
+                    {m.sender === "admin" ? "Instructor (You)" : "Student"}
                   </span>
                 </div>
               ))}
