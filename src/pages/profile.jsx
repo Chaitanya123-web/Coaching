@@ -76,9 +76,9 @@ export default function Profile() {
                   {avatar ? (
                     <img src={avatar} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                  <span className="text-3xl sm:text-4xl font-bold">
-                    {user?.name ? user.name.charAt(0).toUpperCase() : "I"}
-                  </span>
+                <span className="text-3xl sm:text-4xl font-bold">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : "I"}
+                </span>
                   )}
                 </div>
                 

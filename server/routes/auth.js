@@ -98,7 +98,8 @@ router.post("/forgotpassword", async (req, res) => {
       { expiresIn: "15m" }
     );
 
-    const resetLink = `http://localhost:5173/resetpassword/${resetToken}`;
+    const frontendUrl = process.env.FRONTEND_URL || "https://theindofrenchias.netlify.app";
+    const resetLink = `${frontendUrl}/resetpassword/${resetToken}`;
 
     await sendEmail({
       to: user.email,
