@@ -17,17 +17,18 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+
 api.interceptors.response.use(
-  (response) => response.data,
-  (error) => {
+  (response) => {
    
-    console.error("API Error Response:", error.response);
-    
-    const message =
-      error?.response?.data?.message ||
-      error?.message ||
-      "Something went wrong";
-    return Promise.reject(message);
+    if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
+      return Promise.reject("Server is waking up. Please refresh in a moment.");
+    }
+    return response.data;
+  },
+  (error) => {
+    console.error("Production Error:", error.response?.status);
+    return Promise.reject(error);
   }
 );
 

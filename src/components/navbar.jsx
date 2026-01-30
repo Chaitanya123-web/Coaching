@@ -60,7 +60,7 @@ export default function Navbar() {
 
         {/* DESKTOP LINKS */}
         <div className="hidden md:flex items-center gap-8 text-[10px] uppercase tracking-[0.2em] font-bold text-[#f2f1d5]/70">
-          {(navLinks || []).map((link) => (
+        {navLinks && Array.isArray(navLinks) && navLinks.map((link) => (
             <a
               key={link.name}
               href={link.href}
@@ -134,7 +134,7 @@ export default function Navbar() {
         {/* MOBILE MENU */}
         {isOpen && (
           <div className="absolute top-[calc(100%+12px)] left-0 w-full bg-[#0b2a4a] border border-white/10 rounded-2xl p-6 flex flex-col gap-4 md:hidden shadow-2xl animate-in fade-in zoom-in duration-200">
-            {(navLinks || []).map((link) => (
+          {navLinks && Array.isArray(navLinks) && navLinks.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
