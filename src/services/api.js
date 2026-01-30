@@ -2,7 +2,7 @@ import axios from "axios";
 
 const api = axios.create({
   // Fallback to empty string to prevent undefined errors during mapping
-  baseURL: import.meta.env.VITE_API_URL || "",
+  baseURL: "https://the-indofrench-ias.onrender.com/api",
   withCredentials: true, // Crucial for cross-domain requests in production
 });
 
