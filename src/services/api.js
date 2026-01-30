@@ -18,17 +18,19 @@ api.interceptors.request.use(
 );
 
 
+// services/api.js hardening
 api.interceptors.response.use(
   (response) => {
-   
-    if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
-      return Promise.reject("Server is waking up. Please refresh in a moment.");
+    const data = response.data;
+    // If the component expects a list but gets an object error page, 
+    // we return an empty array to prevent the .map() crash.
+    if (typeof data === 'string' && data.includes('<!DOCTYPE')) {
+      return []; 
     }
-    return response.data;
+    return data;
   },
   (error) => {
-    console.error("Production Error:", error.response?.status);
-    return Promise.reject(error);
+    return []; // Return empty array on failure so .map() doesn't crash
   }
 );
 
