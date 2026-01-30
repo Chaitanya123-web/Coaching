@@ -59,23 +59,21 @@ export default function AdminChats() {
         </div>
 
         <div className="flex-1 overflow-y-auto no-scrollbar">
-          {students.map((s) => (
-            <button
-              key={s._id}
-              onClick={() => openChat(s)}
-              className={`w-full p-6 text-left transition-all border-b border-white/5 flex items-center gap-4
-                ${activeStudent?._id === s._id ? "bg-[#1f4f5a] border-l-4 border-l-[#f2f1d5]" : "hover:bg-white/5"}
-              `}
-            >
-              <div className="w-10 h-10 rounded-xl bg-[#f2f1d5] text-[#0b2a4a] flex items-center justify-center font-black">
-                {s.name.charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <div className="font-bold text-[#f2f1d5] truncate uppercase tracking-tight text-sm">{s.name}</div>
-                <div className="text-[10px] text-[#6fa6b2] truncate font-medium">{s.email}</div>
-              </div>
-            </button>
-          ))}
+          {Array.isArray(students) ? (
+            students.map((s) => (
+              <button
+                key={s._id}
+                onClick={() => openChat(s)}
+                className={`w-full p-6 text-left transition-all border-b border-white/5 flex items-center gap-4
+                  ${activeStudent?._id === s._id ? "bg-[#1f4f5a] border-l-4 border-l-[#f2f1d5]" : "hover:bg-white/5"}
+                `}
+              >
+                {/* ... content */}
+              </button>
+            ))
+          ) : (
+            <p className="p-6 text-[#6fa6b2] text-xs uppercase font-bold">No students found</p>
+          )}
         </div>
       </div>
 

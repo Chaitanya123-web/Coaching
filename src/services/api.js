@@ -1,10 +1,11 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  // Fallback to empty string to prevent undefined errors during mapping
+  baseURL: import.meta.env.VITE_API_URL || "",
+  withCredentials: true, // Crucial for cross-domain requests in production
 });
 
-// attach jwt token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -16,10 +17,12 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// services/api.js
 api.interceptors.response.use(
-  (response) => response.data,   
+  (response) => response.data,
   (error) => {
+   
+    console.error("API Error Response:", error.response);
+    
     const message =
       error?.response?.data?.message ||
       error?.message ||
