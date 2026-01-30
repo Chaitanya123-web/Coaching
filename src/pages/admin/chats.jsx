@@ -13,21 +13,33 @@ export default function AdminChats() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  useEffect(() => {
-    api.get("/chat/admin/students").then((data) => {
-      setStudents(Array.isArray(data.students) ? data.students : []);
+
+useEffect(() => {
+  api.get("/chat/admin/students")
+    .then((data) => {
+      const actualArray = Array.isArray(data) ? data : data?.students;
+      setStudents(Array.isArray(actualArray) ? actualArray : []);
+    })
+    .catch((err) => {
+      console.error("API failed to return array:", err);
+      setStudents([]);
     });
-  }, []);
+}, []);
+
+const openChat = async (student) => {
+  setActiveStudent(student);
+  try {
+    const data = await api.get(`/chat/admin/${student._id}`);
+    const actualMessages = Array.isArray(data) ? data : data?.messages;
+    setMessages(Array.isArray(actualMessages) ? actualMessages : []);
+  } catch (err) {
+    setMessages([]);
+  }
+};
+
 
 
   useEffect(scrollToBottom, [messages]);
-
-  const openChat = async (student) => {
-    setActiveStudent(student);
-    const data = await api.get(`/chat/admin/${student._id}`);
-    setMessages(Array.isArray(data.messages) ? data.messages : []);
-  };
-
 
   const send = async () => {
     if (!message.trim()) return;
