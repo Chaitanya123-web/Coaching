@@ -9,28 +9,28 @@ export default function Home() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const fetchcourses = async () => {
-      try {
-        const response = await api.get("/course");
-        
-        /**
-         * PRODUCTION SAFETY: Strict Unwrapping
-         * Ensures 'courses' state is always an array.
-         * Handles cases where backend might return { courses: [...] } or an error object.
-         */
-        const actualCourses = Array.isArray(response) 
-          ? response 
-          : (response?.courses || []);
-          
-        setCourses(actualCourses);
-      } catch (err) {
-        console.error("Home API Error:", err);
-        setError("Failed to load courses. Please try again later.");
-        setCourses([]); // Fallback to empty array to prevent .map crash
-      } finally {
-        setLoading(false);
+  const fetchcourses = async () => {
+    try {
+      const response = await api.get("/course");
+      
+      // Strict unwrapping: Check every possible location for the array
+      let actualCourses = [];
+      if (Array.isArray(response)) {
+        actualCourses = response;
+      } else if (response && Array.isArray(response.courses)) {
+        actualCourses = response.courses;
+      } else if (response && response.data && Array.isArray(response.data.courses)) {
+        actualCourses = response.data.courses;
       }
-    };
+
+      setCourses(actualCourses);
+    } catch (err) {
+      setCourses([]); 
+      setError("Failed to load courses.");
+    } finally {
+      setLoading(false);
+    }
+  };
     fetchcourses();
   }, []);
 
