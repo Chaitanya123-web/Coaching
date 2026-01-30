@@ -202,7 +202,7 @@ export default function AdminBatches() {
                 required
               >
                 <option value="">Select Target Batch</option>
-                {courses.map((course) => (
+                {Array.isArray(courses) && courses.map((course) => (
                   <option key={course._id} value={course._id}>{course.title.toUpperCase()}</option>
                 ))}
               </select>

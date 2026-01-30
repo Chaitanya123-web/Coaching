@@ -35,7 +35,28 @@ export default function Methodology() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-            {[
+            {Array.isArray([
+              {
+                step: "01",
+                title: "Atomic Foundations",
+                desc: "We deconstruct the syllabus into atomic concepts. We don't move to complex 'current affairs' until your static foundation is unshakable.",
+              },
+              {
+                step: "02",
+                title: "Guided Interlinking",
+                desc: "IAS preparation is about connecting the dots. Our video modules teach you how to link Economy with History and Geography with Governance.",
+              },
+              {
+                step: "03",
+                title: "Zero-Doubt Ecosystem",
+                desc: "An ignored doubt is a failed attempt. Our community chat system ensures every query is addressed by specialists in real-time.",
+              },
+              {
+                step: "04",
+                title: "The Retrieval Method",
+                desc: "We utilize active recall and cognitive reinforcement modules to ensure that what you learn today stays with you until the final interview.",
+              },
+            ]) && [
               {
                 step: "01",
                 title: "Atomic Foundations",

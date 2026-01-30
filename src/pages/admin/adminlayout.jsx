@@ -44,7 +44,7 @@ export default function AdminLayout() {
 
         {/* NAVIGATION LINKS */}
         <nav className="flex flex-col gap-3">
-          {navigation.map((item) => (
+          {Array.isArray(navigation) && navigation.map((item) => (
             <NavLink
               key={item.name}
               to={item.href}

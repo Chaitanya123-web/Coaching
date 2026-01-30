@@ -60,7 +60,7 @@ export default function Footer() {
                 </a>
               </div>
               <div className="flex flex-wrap gap-3">
-                {["LinkedIn", "Instagram", "YouTube"].map((social) => (
+                {Array.isArray(["LinkedIn", "Instagram", "YouTube"]) && ["LinkedIn", "Instagram", "YouTube"].map((social) => (
                   <a
                     key={social}
                     href={`#${social.toLowerCase()}`}
