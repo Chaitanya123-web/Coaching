@@ -24,6 +24,14 @@ export default function AdminChats() {
         setStudents([]); 
       });
   }, []);
+  useEffect(() => {
+    api.get("/auth/me")
+      .then((u) => {
+        if (u.role !== "admin") window.location.href = "/";
+      })
+      .catch(() => window.location.href = "/login");
+  }, []);
+
 
   useEffect(scrollToBottom, [messages]);
 
