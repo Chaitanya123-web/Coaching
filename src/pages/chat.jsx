@@ -1,4 +1,6 @@
 import Chatbox from "../components/chatbox";
+import { useEffect, useState } from "react";
+import api from "../services/api";
 
 export default function Chat() {
   useEffect(() => {
