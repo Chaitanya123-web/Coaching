@@ -7,6 +7,8 @@ export default function AdminLayout() {
   const navigation = [
     { name: "Batches", href: "/admin/batches", icon: "📚" },
     { name: "Chats", href: "/admin/chats", icon: "💬" },
+    { name: "Messages", href: "/admin/contact", icon: "📩" }, 
+    { name: "Inventory", href: "/admin/books", icon: "📖" },
   ];
 
   return (

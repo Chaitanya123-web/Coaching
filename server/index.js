@@ -10,6 +10,8 @@ import chatroutes from "./routes/chat.js";
 import connectdb from "./db.js";
 import createAdmin from "./utils/createadmin.js";
 import enrollroutes from "./routes/enroll.js";
+import contactroutes from "./routes/contact.js";
+import bookRoutes from "./routes/book.js";
 
 
 dotenv.config();
@@ -37,6 +39,9 @@ app.use("/api/course", courseroutes);
 app.use("/api/video", videoroutes);
 app.use("/api/chat", chatroutes);
 app.use("/api/enroll", enrollroutes);
+app.use("/api/contact", contactroutes);
+app.use("/api/books", bookRoutes);
+
 
 // root
 app.get("/", (req, res) => {

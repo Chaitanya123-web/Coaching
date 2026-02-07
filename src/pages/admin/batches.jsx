@@ -96,7 +96,7 @@ export default function AdminBatches() {
         </div>
         <div className="bg-white p-8 rounded-[2rem] shadow-xl shadow-black/[0.02] border border-[#0b2a4a]/5">
           <p className="text-[#6fa6b2] text-[10px] font-black uppercase tracking-widest mb-2">Platform</p>
-          <h3 className="text-xl font-bold text-[#0b2a4a] uppercase tracking-tight">Vercel Production</h3>
+          <h3 className="text-xl font-bold text-[#0b2a4a] uppercase tracking-tight">Live Console</h3>
         </div>
       </div>
 

@@ -17,6 +17,11 @@ import Resetpassword from "./pages/resetpassword";
 import AdminLayout from "./pages/admin/adminlayout";
 import AdminChats from "./pages/admin/chats";
 import AdminBatches from "./pages/admin/batches";
+import Contact from "./pages/contact";
+import AdminContactMessages from "./pages/admin/contactmessages";
+import AdminBooks from "./pages/admin/books"
+import Shop from "./pages/shop";
+
 
 
 export default function App() {
@@ -37,8 +42,12 @@ export default function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/methodology" element={<Methodology />} />
         <Route path="/resetpassword/:token" element={<Resetpassword />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/shop" element={<Shop />} />
+
 
         {/* ✅ ADMIN SECTION */}
+        
         <Route path="/admin" element={<AdminLayout />}>
           {/* default */}
           <Route index element={<AdminBatches />} />
@@ -46,6 +55,10 @@ export default function App() {
           {/* pages */}
           <Route path="batches" element={<AdminBatches />} />
           <Route path="chats" element={<AdminChats />} />
+          <Route path="contact" element={<AdminContactMessages />} />
+          <Route path="books" element={<AdminBooks />} />
+          
+
         </Route>
       </Routes>
 
