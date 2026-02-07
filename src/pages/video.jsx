@@ -8,9 +8,9 @@ export default function Video() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [currentTime, setCurrentTime] = useState(0); 
-  const [duration, setDuration] = useState(0); 
-  
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+
   const playerRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -19,7 +19,7 @@ export default function Video() {
       try {
         const [videoData, userData] = await Promise.all([
           api.get(`/video/single/${videoid}`),
-          api.get("/auth/me")
+          api.get("/auth/me"),
         ]);
         setVideo(videoData);
         setUser(userData);
@@ -28,7 +28,6 @@ export default function Video() {
     fetchvideo();
   }, [videoid]);
 
-  // Helper: Format seconds to MM:SS
   const formatTime = (seconds) => {
     if (!seconds || isNaN(seconds) || seconds < 0) return "0:00";
     const mins = Math.floor(seconds / 60);
@@ -38,63 +37,64 @@ export default function Video() {
 
   const sendCommand = (func, args = []) => {
     if (playerRef.current?.contentWindow) {
-      playerRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args }), '*');
+      playerRef.current.contentWindow.postMessage(
+        JSON.stringify({ event: "command", func, args }),
+        "*"
+      );
     }
   };
 
-  // ROBUST TIME SYNC LOGIC
+  // SYNC LOGIC - Force YouTube to talk to us
   useEffect(() => {
     const handleMessage = (event) => {
-      // Only accept messages from YouTube
+      // Netlify origin security
       if (!event.origin.includes("youtube.com")) return;
 
       try {
         const data = JSON.parse(event.data);
-        
-        // infoDelivery carries real-time updates
-        if (data.event === 'infoDelivery' && data.info) {
+        if (data.event === "infoDelivery" && data.info) {
           if (data.info.currentTime !== undefined) setCurrentTime(data.info.currentTime);
-          if (data.info.duration !== undefined && data.info.duration > 0) {
-            setDuration(data.info.duration);
-          }
+          if (data.info.duration !== undefined && data.info.duration > 0) setDuration(data.info.duration);
         }
       } catch (e) {}
     };
 
     window.addEventListener("message", handleMessage);
 
-    // Fast Polling to force YouTube to send updates
+    // Initial trigger to wake up the API
+    const initialTrigger = setTimeout(() => {
+      sendCommand("addEventListener", ["onStateChange"]);
+    }, 2000);
+
     const timer = setInterval(() => {
-      sendCommand('getCurrentTime');
-      sendCommand('getDuration');
-    }, 500);
+      sendCommand("getCurrentTime");
+      sendCommand("getDuration");
+    }, 1000);
 
     return () => {
       window.removeEventListener("message", handleMessage);
       clearInterval(timer);
+      clearTimeout(initialTrigger);
     };
   }, []);
 
   const getYouTubeEmbedUrl = (url) => {
     if (!url) return null;
     const videoId = url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/user\/\S+|\/ytscreeningroom\?v=))([\w\-]{11})/)?.[1];
-    
-    // Origin is critical for postMessage to be allowed by YT
+    // Dynamic origin for Netlify
     const origin = window.location.origin;
     return `https://www.youtube.com/embed/${videoId}?enablejsapi=1&origin=${origin}&rel=0&modestbranding=1&controls=0&showinfo=0&autoplay=1&iv_load_policy=3`;
   };
 
   const handleSkip = (seconds) => {
     const newTime = currentTime + seconds;
-    // Clamping to ensure we stay within video bounds
     const clampedTime = Math.max(0, duration > 0 ? Math.min(newTime, duration) : newTime);
-    
-    sendCommand('seekTo', [clampedTime, true]);
-    setCurrentTime(clampedTime); // Optimistic UI update
+    sendCommand("seekTo", [clampedTime, true]);
+    setCurrentTime(clampedTime);
   };
 
   const togglePlay = () => {
-    sendCommand(isPlaying ? 'pauseVideo' : 'playVideo');
+    sendCommand(isPlaying ? "pauseVideo" : "playVideo");
     setIsPlaying(!isPlaying);
   };
 
@@ -103,24 +103,14 @@ export default function Video() {
     else document.exitFullscreen();
   };
 
-  if (loading || !video) return <div className="min-h-screen bg-[#f8f7eb] flex items-center justify-center font-black text-[#0b2a4a]">Loading Secure Stream...</div>;
+  if (loading || !video) return <div className="min-h-screen bg-[#f8f7eb] flex items-center justify-center font-black">Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-[#f8f7eb] pt-32 px-4 select-none" onContextMenu={(e) => e.preventDefault()}>
+    <div className="min-h-screen bg-[#f8f7eb] pt-32 px-4 select-none">
       <div className="max-w-5xl mx-auto" ref={containerRef}>
-        
         <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl bg-black border-4 border-[#0b2a4a] aspect-video group">
-          
           <div className="absolute inset-0 z-40 bg-transparent pointer-events-auto"></div>
-
-          {user && (
-            <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden opacity-10">
-              <div className="absolute top-[12%] left-[12%] text-white text-[9px] font-black uppercase tracking-[0.5em] animate-pulse">
-                {user.email} | {user.name}
-              </div>
-            </div>
-          )}
-
+          
           <div className="absolute inset-0 z-0 scale-[1.12]">
             <iframe
               ref={playerRef}
@@ -130,59 +120,32 @@ export default function Video() {
             ></iframe>
           </div>
 
-          {/* 100% TRANSPARENT CONTROLS - LEFT ALIGNED */}
+          {/* TRANSPARENT CONTROLS - LEFT ALIGNED */}
           <div className="absolute bottom-6 left-0 right-0 z-[60] px-8 transition-all duration-500 ease-out translate-y-2 group-hover:translate-y-0">
-            <div className="relative flex items-center justify-between bg-black/20 border border-white/5 p-6 rounded-[2.5rem] backdrop-blur-[2px]">
-              
+            <div className="relative flex items-center justify-between bg-black/20 border border-white/5 p-6 rounded-[2.5rem] backdrop-blur-sm">
               <div className="flex flex-col gap-4">
-                {/* DYNAMIC TIME LABEL */}
+                {/* ACCURATE TIME LABEL */}
                 <div className="text-white/80 font-black text-[10px] tracking-[0.2em] ml-2">
                   {formatTime(currentTime)} <span className="text-white/20 mx-1">/</span> {formatTime(duration)}
                 </div>
 
-                {/* BUTTONS GROUP */}
                 <div className="flex items-center gap-10">
                   <button onClick={() => handleSkip(-10)} className="flex flex-col items-center gap-1 text-white/40 hover:text-white transition-all">
                     <span className="text-xl">⏪</span>
-                    <span className="text-[9px] font-black uppercase tracking-tighter">-10s</span>
+                    <span className="text-[9px] font-bold">-10s</span>
                   </button>
-                  
-                  <button 
-                    onClick={togglePlay} 
-                    className="w-14 h-14 flex items-center justify-center bg-[#f2f1d5]/90 text-[#0b2a4a] rounded-2xl hover:scale-105 transition-transform shadow-xl"
-                  >
-                    {isPlaying ? (
-                      <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-                    ) : (
-                      <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                    )}
+                  <button onClick={togglePlay} className="w-14 h-14 flex items-center justify-center bg-[#f2f1d5]/90 text-[#0b2a4a] rounded-2xl shadow-xl">
+                    {isPlaying ? "||" : "▶"}
                   </button>
-
                   <button onClick={() => handleSkip(10)} className="flex flex-col items-center gap-1 text-white/40 hover:text-white transition-all">
                     <span className="text-xl">⏩</span>
-                    <span className="text-[9px] font-black uppercase tracking-tighter">+10s</span>
+                    <span className="text-[9px] font-bold">+10s</span>
                   </button>
                 </div>
               </div>
-
-              {/* FULL SCREEN */}
-              <button 
-                onClick={handleFullScreen}
-                className="px-6 py-3 bg-white/5 text-white/30 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-white/10 hover:bg-[#f2f1d5] hover:text-[#0b2a4a] transition-all hidden sm:block"
-              >
-                Full Screen
-              </button>
-
+              <button onClick={handleFullScreen} className="px-6 py-3 bg-white/5 text-white/30 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-white/10 hover:bg-[#f2f1d5] hover:text-[#0b2a4a] transition-all">Full Screen</button>
             </div>
           </div>
-        </div>
-
-        {/* INFO */}
-        <div className="mt-10 bg-white p-10 rounded-[3.5rem] shadow-xl border border-[#0b2a4a]/5 mb-20">
-          <h1 className="text-4xl font-black text-[#0b2a4a] tracking-tight leading-none">{video.title}</h1>
-          <p className="mt-8 text-[#2f6f7e] text-lg font-medium leading-relaxed italic border-l-4 border-[#0b2a4a]/20 pl-8 bg-[#f8f7eb]/40 py-8 rounded-r-[2rem]">
-            {video.description || "Official study material for The Indofrench IAS curriculum."}
-          </p>
         </div>
       </div>
     </div>
