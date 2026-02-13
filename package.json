@@ -6,6 +6,7 @@
   "engines": {
     "node": ">=20"
   },
+  "start": "node index.js"
   "scripts": {
     "dev": "vite",
     "build": "vite build",
