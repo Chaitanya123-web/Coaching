@@ -23,10 +23,8 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://theindofrenchias.vercel.app",
       "https://theindofrenchias.netlify.app",
-      
-      /\.vercel\.app$/
+      "https://coaching-production-b1f3.up.railway.app"
     ],
     credentials: true,
   })
