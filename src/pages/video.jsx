@@ -44,7 +44,7 @@ export default function Video() {
     }
   };
 
-  // SYNC LOGIC - Force connection with YouTube
+  // SYNC LOGIC - Robust for Railway Domain
   useEffect(() => {
     const handleMessage = (event) => {
       if (!event.origin.includes("youtube.com")) return;
@@ -60,12 +60,11 @@ export default function Video() {
 
     window.addEventListener("message", handleMessage);
 
-    // Initial wake-up to force YouTube to start sending data
+    // Initial wake-up to force YouTube to recognize the Railway origin
     const timer = setInterval(() => {
       sendCommand("getCurrentTime");
       sendCommand("getDuration");
-      // "listening" command help YouTube recognize the origin
-      sendCommand("listening"); 
+      sendCommand("listening"); // Forces communication tunnel open on cloud domains
     }, 1000);
 
     return () => {
@@ -77,6 +76,7 @@ export default function Video() {
   const getYouTubeEmbedUrl = (url) => {
     if (!url) return null;
     const videoId = url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/user\/\S+|\/ytscreeningroom\?v=))([\w\-]{11})/)?.[1];
+    // Dynamic origin for Railway
     const origin = window.location.origin; 
     return `https://www.youtube.com/embed/${videoId}?enablejsapi=1&origin=${origin}&rel=0&modestbranding=1&controls=0&showinfo=0&autoplay=1&iv_load_policy=3`;
   };
@@ -94,11 +94,12 @@ export default function Video() {
   };
 
   const handleFullScreen = () => {
+    if (!containerRef.current) return;
     if (!document.fullscreenElement) containerRef.current.requestFullscreen();
     else document.exitFullscreen();
   };
 
-  if (loading || !video) return <div className="min-h-screen bg-[#f8f7eb] flex items-center justify-center font-black">Loading...</div>;
+  if (loading || !video) return <div className="min-h-screen bg-[#f8f7eb] flex items-center justify-center font-black">Connecting Secure Stream...</div>;
 
   return (
     <div className="min-h-screen bg-[#f8f7eb] pt-32 px-4 select-none" onContextMenu={(e) => e.preventDefault()}>
@@ -106,10 +107,8 @@ export default function Video() {
         
         <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl bg-black border-4 border-[#0b2a4a] aspect-video group">
           
-          {/* PROTECTIVE SHIELD */}
           <div className="absolute inset-0 z-40 bg-transparent pointer-events-auto"></div>
 
-          {/* DYNAMIC WATERMARK */}
           {user && (
             <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden opacity-10">
               <div className="absolute top-[12%] left-[12%] text-white text-[9px] font-black uppercase tracking-[0.5em] animate-pulse">
@@ -133,7 +132,7 @@ export default function Video() {
               
               <div className="flex flex-col gap-4">
                 {/* DYNAMIC TIMESTAMP */}
-                <div className="text-white/80 font-black text-[11px] tracking-[0.2em] ml-2 drop-shadow-lg">
+                <div className="text-white/90 font-black text-[11px] tracking-[0.2em] ml-2 drop-shadow-lg">
                   {formatTime(currentTime)} <span className="text-white/30 mx-1">/</span> {formatTime(duration)}
                 </div>
 
@@ -164,13 +163,6 @@ export default function Video() {
 
             </div>
           </div>
-        </div>
-
-        <div className="mt-10 bg-white p-10 rounded-[3.5rem] shadow-xl border border-[#0b2a4a]/5 mb-20">
-          <h1 className="text-4xl font-black text-[#0b2a4a] tracking-tight leading-none">{video.title}</h1>
-          <p className="mt-8 text-[#2f6f7e] text-lg font-medium leading-relaxed italic border-l-4 border-[#0b2a4a]/20 pl-8 bg-[#f8f7eb]/40 py-8 rounded-r-[2rem]">
-            {video.description || "Official study material for The Indofrench IAS curriculum."}
-          </p>
         </div>
       </div>
     </div>
