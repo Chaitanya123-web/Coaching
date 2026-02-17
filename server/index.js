@@ -48,11 +48,11 @@ app.use("/api/books", bookRoutes);
 app.use(express.static(path.join(__dirname, "..", "dist")));
 
 
-app.get("*all", (req, res) => {
+app.get("/:any*", (req, res) => {
   if (!req.path.startsWith("/api/")) {
     res.sendFile(path.join(__dirname, "..", "dist", "index.html"));
   }
-});
+})
 
 
 connectdb().then(createAdmin);
