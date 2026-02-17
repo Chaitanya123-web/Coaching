@@ -16,27 +16,37 @@ export default function Video() {
   const playerRef = useRef(null);
   const chatEndRef = useRef(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [videoData, userData] = await Promise.all([
-          api.get(`/video/single/${videoid}`),
-          api.get("/auth/me"),
-        ]);
-        setVideo(videoData);
-        setUser(userData);
+  // ... (previous imports remain same)
 
-        // Fetch Chat history from Backend
-        const chatData = await api.get(`/chat/${videoid}`);
-        setMessages(chatData || []);
-      } catch (err) { 
-        console.error("Fetch Error:", err); 
-      } finally { 
-        setLoading(false); 
-      }
-    };
-    fetchData();
-  }, [videoid]);
+useEffect(() => {
+  const fetchData = async () => {
+    setLoading(true); // Fetch shuru hote hi loading start karein
+    try {
+      // Dono requests ko parallel bhejein taaki time bache
+      const [videoRes, userRes] = await Promise.all([
+        api.get(`/video/single/${videoid}`),
+        api.get("/auth/me"),
+      ]);
+      
+      // Axios usually data ko .data property mein deta hai
+      setVideo(videoRes.data || videoRes); 
+      setUser(userRes.data || userRes);
+
+      // Chat history alag se fetch karein taaki video pehle load ho jaye
+      api.get(`/chat/${videoid}`)
+        .then(res => setMessages(res.data || res))
+        .catch(err => console.error("Chat fetch error:", err));
+
+    } catch (err) { 
+      console.error("Fetch Error Details:", err);
+      // Agar error aaye toh loading band karke error dikhayein
+    } finally { 
+      setLoading(false); 
+    }
+  };
+
+  if (videoid) fetchData();
+}, [videoid]);
 
   // Auto-scroll chat to bottom
   useEffect(() => {
