@@ -4,12 +4,11 @@ import api from "../../services/api";
 export default function AdminBatches() {
   const [courses, setCourses] = useState([]);
 
-  // create course states
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
 
-  // add video states
   const [videotitle, setVideotitle] = useState("");
   const [videourl, setVideourl] = useState("");
   const [courseid, setCourseid] = useState("");
@@ -17,6 +16,19 @@ export default function AdminBatches() {
 
   const [message, setMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(true);
+
+  const [selectedBatchVideos, setSelectedBatchVideos] = useState([]);
+  const [viewingBatchId, setViewingBatchId] = useState(null);
+
+  const fetchVideosForBatch = async (bid) => {
+    try {
+      const data = await api.get(`/video/course/${bid}`);
+      setSelectedBatchVideos(Array.isArray(data) ? data : (data.videos || []));
+      setViewingBatchId(bid);
+    } catch (err) {
+      console.error("Video fetch failed");
+    }
+  };
 
   useEffect(() => {
     const fetchcourses = async () => {
@@ -156,6 +168,62 @@ export default function AdminBatches() {
             </button>
           </form>
         </section>
+
+      {/* VIDEO MANAGEMENT */}
+      <section className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] shadow-xl border border-[#0b2a4a]/5 mt-10">
+        <h2 className="text-2xl font-black text-[#0b2a4a] uppercase mb-6">Manage Batch Content</h2>
+        
+        <div className="space-y-4">
+          {courses.map((course) => (
+            <div key={course._id} className="border-b border-[#0b2a4a]/5 pb-4">
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-[#0b2a4a]">{course.title}</span>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => fetchVideosForBatch(course._id)}
+                    className="text-[10px] font-black uppercase tracking-widest bg-[#f2f1d5] px-4 py-2 rounded-xl text-[#0b2a4a]"
+                  >
+                    {viewingBatchId === course._id ? "Refreshing..." : "View Videos"}
+                  </button>
+                  <button 
+                    onClick={async () => {
+                      if(confirm("Delete this entire batch?")) {
+                        await api.delete(`/course/delete/${course._id}`);
+                        setCourses(courses.filter(c => c._id !== course._id));
+                      }
+                    }}
+                    className="text-[10px] font-black uppercase tracking-widest bg-red-50 px-4 py-2 rounded-xl text-red-600"
+                  >
+                    Delete Batch
+                  </button>
+                </div>
+              </div>
+
+              {/* Selected Batch ki Videos yahan dikhengi */}
+              {viewingBatchId === course._id && (
+                <div className="mt-4 pl-4 space-y-2 animate-in slide-in-from-top-2">
+                  {selectedBatchVideos.length > 0 ? selectedBatchVideos.map((v) => (
+                    <div key={v._id} className="flex justify-between items-center bg-[#f8f7eb] p-3 rounded-xl">
+                      <span className="text-xs font-medium text-[#0b2a4a]">🎥 {v.title}</span>
+                      <button 
+                        onClick={async () => {
+                          if(confirm("Uda dein ye video?")) {
+                            await api.delete(`/video/delete/${v._id}`);
+                            setSelectedBatchVideos(selectedBatchVideos.filter(vid => vid._id !== v._id));
+                          }
+                        }}
+                        className="text-red-500 hover:scale-110 transition-transform"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  )) : <p className="text-[10px] text-gray-400 italic">No videos in this batch yet.</p>}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
 
         {/* ADD VIDEO FORM */}
         <section>
