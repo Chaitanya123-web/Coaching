@@ -214,6 +214,38 @@ export default function AdminBatches() {
           </form>
         </section>
 
+        <section className="lg:col-span-2 mt-12">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-10 h-10 bg-red-900 rounded-xl flex items-center justify-center text-[#f2f1d5] font-black italic">D</div>
+            <h2 className="text-2xl font-black tracking-tight text-[#0b2a4a] uppercase">Manage Existing Batches</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {courses.map((course) => (
+              <div key={course._id} className="bg-white p-6 rounded-[2rem] shadow-xl border border-[#0b2a4a]/5 flex justify-between items-center group hover:border-red-200 transition-all">
+                <div>
+                  <h4 className="font-black text-[#0b2a4a] uppercase text-sm tracking-tight">{course.title}</h4>
+                  <p className="text-[10px] text-[#6fa6b2] font-bold uppercase tracking-widest mt-1">₹{course.price} • Active</p>
+                </div>
+                <button 
+                  onClick={async () => {
+                    if(window.confirm("Bhai, kya aap sach mein ye batch delete karna chahte hain? Saare videos bhi gayab ho jayenge!")) {
+                      try {
+                        await api.delete(`/course/delete/${course._id}`);
+                        setCourses(courses.filter(c => c._id !== course._id));
+                        showAlert("Batch permanently removed.");
+                      } catch (err) { showAlert("Deletion failed.", false); }
+                    }
+                  }}
+                  className="w-10 h-10 bg-red-50 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                >
+                  🗑️
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+
       </div>
     </div>
   );
