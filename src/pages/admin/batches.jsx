@@ -4,7 +4,6 @@ import api from "../../services/api";
 export default function AdminBatches() {
   const [courses, setCourses] = useState([]);
 
-
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
@@ -80,6 +79,19 @@ export default function AdminBatches() {
       setVideotitle(""); setVideourl(""); setVideofile(null); setCourseid("");
     } catch (err) {
       showAlert("Content upload failed.", false);
+    }
+  };
+
+  {/* NEW: STANDARD VIDEO DELETION LOGIC */}
+  const deleteVideo = async (videoId) => {
+    if (window.confirm("Bhai, kya aap sach mein ye video udaana chahte hain?")) {
+      try {
+        await api.delete(`/video/delete/${videoId}`);
+        setSelectedBatchVideos(prev => prev.filter(v => v._id !== videoId));
+        showAlert("Video deleted successfully.");
+      } catch (err) {
+        showAlert("Failed to delete video.", false);
+      }
     }
   };
 
@@ -169,9 +181,12 @@ export default function AdminBatches() {
           </form>
         </section>
 
-      {/* VIDEO MANAGEMENT */}
+      {/* VIDEO MANAGEMENT SECTION - INTEGRATED DELETION */}
       <section className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] shadow-xl border border-[#0b2a4a]/5 mt-10">
-        <h2 className="text-2xl font-black text-[#0b2a4a] uppercase mb-6">Manage Batch Content</h2>
+        <div className="flex items-center gap-4 mb-8">
+            <div className="w-10 h-10 bg-[#0b2a4a] rounded-xl flex items-center justify-center text-[#f2f1d5] font-black italic">M</div>
+            <h2 className="text-2xl font-black text-[#0b2a4a] uppercase">Manage Batch Content</h2>
+        </div>
         
         <div className="space-y-4">
           {courses.map((course) => (
@@ -181,7 +196,7 @@ export default function AdminBatches() {
                 <div className="flex gap-2">
                   <button 
                     onClick={() => fetchVideosForBatch(course._id)}
-                    className="text-[10px] font-black uppercase tracking-widest bg-[#f2f1d5] px-4 py-2 rounded-xl text-[#0b2a4a]"
+                    className="text-[10px] font-black uppercase tracking-widest bg-[#f2f1d5] px-4 py-2 rounded-xl text-[#0b2a4a] hover:bg-[#0b2a4a] hover:text-[#f2f1d5] transition-colors"
                   >
                     {viewingBatchId === course._id ? "Refreshing..." : "View Videos"}
                   </button>
@@ -192,32 +207,31 @@ export default function AdminBatches() {
                         setCourses(courses.filter(c => c._id !== course._id));
                       }
                     }}
-                    className="text-[10px] font-black uppercase tracking-widest bg-red-50 px-4 py-2 rounded-xl text-red-600"
+                    className="text-[10px] font-black uppercase tracking-widest bg-red-50 px-4 py-2 rounded-xl text-red-600 hover:bg-red-600 hover:text-white transition-colors"
                   >
                     Delete Batch
                   </button>
                 </div>
               </div>
 
-              {/* Selected Batch ki Videos yahan dikhengi */}
+              {/* VIDEO LIST WITH STANDARD DELETION ICON */}
               {viewingBatchId === course._id && (
-                <div className="mt-4 pl-4 space-y-2 animate-in slide-in-from-top-2">
+                <div className="mt-4 pl-4 space-y-2 animate-in slide-in-from-top-2 border-l-2 border-[#f2f1d5]">
                   {selectedBatchVideos.length > 0 ? selectedBatchVideos.map((v) => (
-                    <div key={v._id} className="flex justify-between items-center bg-[#f8f7eb] p-3 rounded-xl">
-                      <span className="text-xs font-medium text-[#0b2a4a]">🎥 {v.title}</span>
+                    <div key={v._id} className="flex justify-between items-center bg-[#f8f7eb] p-4 rounded-2xl border border-[#0b2a4a]/5 hover:shadow-md transition-shadow">
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">🎥</span>
+                        <span className="text-xs font-bold text-[#0b2a4a] uppercase tracking-tight">{v.title}</span>
+                      </div>
                       <button 
-                        onClick={async () => {
-                          if(confirm("Uda dein ye video?")) {
-                            await api.delete(`/video/delete/${v._id}`);
-                            setSelectedBatchVideos(selectedBatchVideos.filter(vid => vid._id !== v._id));
-                          }
-                        }}
-                        className="text-red-500 hover:scale-110 transition-transform"
+                        onClick={() => deleteVideo(v._id)}
+                        className="w-9 h-9 flex items-center justify-center bg-white text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm active:scale-90"
+                        title="Delete Video"
                       >
                         🗑️
                       </button>
                     </div>
-                  )) : <p className="text-[10px] text-gray-400 italic">No videos in this batch yet.</p>}
+                  )) : <p className="text-[10px] text-gray-400 italic font-bold uppercase tracking-widest p-2">No videos in this batch yet.</p>}
                 </div>
               )}
             </div>
@@ -282,6 +296,7 @@ export default function AdminBatches() {
           </form>
         </section>
 
+        {/* MANAGE EXISTING BATCHES SECTION */}
         <section className="lg:col-span-2 mt-12">
           <div className="flex items-center gap-4 mb-8">
             <div className="w-10 h-10 bg-red-900 rounded-xl flex items-center justify-center text-[#f2f1d5] font-black italic">D</div>

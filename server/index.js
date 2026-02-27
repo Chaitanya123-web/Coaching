@@ -26,7 +26,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://theindofrenchias.netlify.app",
+      "https://the-indofrench-ias.onrender.com",
       "https://coaching-production-b1f3.up.railway.app",
       /\.onrender\.app$/ 
     ],

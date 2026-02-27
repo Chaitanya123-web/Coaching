@@ -5,6 +5,8 @@ import Video from "../models/video.js";
 const router = express.Router();
 
 /* get single video */
+
+
 router.get("/single/:videoid", async (req, res) => {
   try {
     const video = await Video.findById(req.params.videoid);
@@ -33,9 +35,9 @@ router.get("/:courseid", async (req, res) => {
 router.delete("/delete/:id", async (req, res) => {
   try {
     await Video.findByIdAndDelete(req.params.id);
-    res.status(200).json({ message: "Video deleted successfully" });
+    res.status(200).json({ message: "Success" });
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete video" });
+    res.status(500).json({ error: "Failed" });
   }
 });
 
