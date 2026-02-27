@@ -4,7 +4,7 @@ const bookSchema = new mongoose.Schema({
   title: String,
   price: Number,
   description: String,
-  image: String, // Cloudinary URL store hoga
+  image: String, 
   stock: Number,
 }, { timestamps: true });
 
