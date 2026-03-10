@@ -3,7 +3,7 @@ import api from "../services/api";
 import Coursecard from "../components/coursecard";
 
 export default function Dashboard() {
-  const [courses, setCourses] = useState([]); // Initialized as empty array
+  const [courses, setCourses] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -110,10 +110,12 @@ export default function Dashboard() {
                 
                 <div className="hover:scale-[1.02] md:hover:-translate-y-3 transition-all duration-500 ease-out h-full">
                   <Coursecard
+                    key={course._id}
                     id={course._id}
                     title={course.title}
                     description={course.description}
                     price="enrolled"
+                    thumbnail={course.image}
                   />
                 </div>
 

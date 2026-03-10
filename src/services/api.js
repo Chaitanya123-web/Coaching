@@ -16,14 +16,12 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => {
     if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE')) {
-      return null; 
+      console.error("DEBUG: Backend crashed and sent an HTML error page.");
+      return Promise.reject(new Error("Server crashed (HTML response)")); 
     }
     return response.data;
   },
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-    }
     return Promise.reject(error);
   }
 );

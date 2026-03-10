@@ -7,6 +7,7 @@ export default function AdminBatches() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [courseImage, setCourseImage] = useState(null); // New state for course thumbnail
 
   const [videotitle, setVideotitle] = useState("");
   const [videourl, setVideourl] = useState("");
@@ -29,16 +30,17 @@ export default function AdminBatches() {
     }
   };
 
+  const fetchcourses = async () => {
+    try {
+      const response = await api.get("/course");
+      const actualCourses = Array.isArray(response) ? response : (response?.courses || []);
+      setCourses(actualCourses);
+    } catch (err) {
+      console.error("Fetch failed:", err);
+    }
+  };
+
   useEffect(() => {
-    const fetchcourses = async () => {
-      try {
-        const response = await api.get("/course");
-        const actualCourses = Array.isArray(response) ? response : (response?.courses || []);
-        setCourses(actualCourses);
-      } catch (err) {
-        console.error("Fetch failed:", err);
-      }
-    };
     fetchcourses();
   }, []);
 
@@ -48,19 +50,32 @@ export default function AdminBatches() {
     setTimeout(() => setMessage(""), 5000);
   };
 
-  const createcourse = async (e) => {
-    e.preventDefault();
-    try {
-      await api.post("/course/create", { title, description, price });
-      showAlert("New batch has been launched successfully.");
-      setTitle(""); setDescription(""); setPrice("");
-      const updated = await api.get("/course");
-      const actualCourses = Array.isArray(updated) ? updated : (updated?.courses || []);
-      setCourses(actualCourses);
-    } catch (err) {
-      showAlert("Launch failed. Please verify data.", false);
+const createcourse = async (e) => {
+  e.preventDefault();
+  try {
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("description", description);
+    formData.append("price", price);
+    
+    // Ensure the key "image" matches imageUpload.single("image") in backend
+    if (courseImage) {
+      formData.append("image", courseImage); 
     }
-  };
+
+    const response = await api.post("/course/create", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    showAlert("New batch has been launched successfully.");
+    setTitle(""); setDescription(""); setPrice(""); setCourseImage(null);
+    fetchcourses(); 
+  } catch (err) {
+    // This will print the actual error from your Node.js server to the browser console
+    console.error("Launch Error Details:", err.response?.data || err.message);
+    showAlert(`Launch failed: ${err.response?.data?.message || "Server Error"}`, false);
+  }
+};
 
   const addvideo = async (e) => {
     e.preventDefault();
@@ -82,7 +97,6 @@ export default function AdminBatches() {
     }
   };
 
-  {/* NEW: STANDARD VIDEO DELETION LOGIC */}
   const deleteVideo = async (videoId) => {
     if (window.confirm("Bhai, kya aap sach mein ye video udaana chahte hain?")) {
       try {
@@ -175,13 +189,29 @@ export default function AdminBatches() {
               />
             </div>
 
+            {/* NEW THUMBNAIL INPUT */}
+            <div>
+              <label className="text-[10px] font-black uppercase text-[#6fa6b2] ml-2 mb-3 block tracking-widest">Batch Thumbnail / Banner</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    setCourseImage(file); 
+                  }
+                }}
+                className="..."
+              />
+            </div>
+
             <button className="w-full bg-[#0b2a4a] text-[#f2f1d5] py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] hover:bg-[#1f4f5a] transition-all active:scale-95 shadow-xl shadow-[#0b2a4a]/10">
               Deploy Batch
             </button>
           </form>
         </section>
 
-      {/* VIDEO MANAGEMENT SECTION - INTEGRATED DELETION */}
+      {/* VIDEO MANAGEMENT SECTION */}
       <section className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] shadow-xl border border-[#0b2a4a]/5 mt-10">
         <div className="flex items-center gap-4 mb-8">
             <div className="w-10 h-10 bg-[#0b2a4a] rounded-xl flex items-center justify-center text-[#f2f1d5] font-black italic">M</div>
@@ -214,7 +244,6 @@ export default function AdminBatches() {
                 </div>
               </div>
 
-              {/* VIDEO LIST WITH STANDARD DELETION ICON */}
               {viewingBatchId === course._id && (
                 <div className="mt-4 pl-4 space-y-2 animate-in slide-in-from-top-2 border-l-2 border-[#f2f1d5]">
                   {selectedBatchVideos.length > 0 ? selectedBatchVideos.map((v) => (
