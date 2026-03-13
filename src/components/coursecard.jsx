@@ -33,10 +33,6 @@ export default function Coursecard({ id, title, description, price, thumbnail })
 
       <div className="p-8 flex flex-col flex-1">
         <div className="mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="w-2 h-2 rounded-full bg-[#1f4f5a] animate-pulse"></span>
-            <span className="text-[10px] font-black text-[#6fa6b2] uppercase tracking-[0.2em]">Live Interactive Batch</span>
-          </div>
           
           <h3 className="text-2xl font-black text-[#0b2a4a] leading-tight mb-4 tracking-tighter uppercase italic group-hover:text-[#1f4f5a] transition-colors">
             {title}

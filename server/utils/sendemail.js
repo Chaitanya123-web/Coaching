@@ -2,23 +2,21 @@ import nodemailer from "nodemailer";
 
 const sendEmail = async ({ to, subject, html }) => {
   const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
+    service: "gmail", 
     auth: {
       user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+      pass: process.env.EMAIL_PASS, 
     },
   });
 
-  await transporter.verify(); // 🔥 forces auth check
-
-  await transporter.sendMail({
-    from: `"ACADEMY Support" <${process.env.EMAIL_USER}>`,
+  const mailOptions = {
+    from: `"Indofrench Support" <${process.env.EMAIL_USER}>`,
     to,
     subject,
     html,
-  });
+  };
+
+  return await transporter.sendMail(mailOptions);
 };
 
 export default sendEmail;

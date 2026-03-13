@@ -7,32 +7,28 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const fetchmycourses = async () => {
-      try {
-        const response = await api.get("/course");
+useEffect(() => {
+  const fetchmycourses = async () => {
+    try {
+      // CHANGE THIS: Hit the enrollment-specific endpoint
+      const response = await api.get("/enroll/my-courses");
+      
+      const actualCourses = Array.isArray(response) 
+        ? response 
+        : (response?.courses || []);
         
-        /**
-         * PRODUCTION FIX: Strict Unwrapping
-         * Forces the result into an array format even if backend sends { courses: [...] }
-         * or a single object error message.
-         */
-        const actualCourses = Array.isArray(response) 
-          ? response 
-          : (response?.courses || []);
-          
-        setCourses(actualCourses);
-      } catch (err) {
-        console.error("Dashboard Load Error:", err);
-        setError("Unable to load your dashboard. Please try again.");
-        setCourses([]); // Fallback to empty array to prevent .map crash
-      } finally {
-        setLoading(false);
-      }
-    };
+      setCourses(actualCourses);
+    } catch (err) {
+      console.error("Dashboard Load Error:", err);
+      setError("Unable to load your enrolled courses.");
+      setCourses([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchmycourses();
-  }, []);
+  fetchmycourses();
+}, []);
 
   if (loading) {
     return (
