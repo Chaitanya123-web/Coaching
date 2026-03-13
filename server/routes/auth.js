@@ -95,36 +95,28 @@ router.get("/me", async (req, res) => {
 router.post("/forgotpassword", async (req, res) => {
   try {
     const normalizedEmail = req.body.email.toLowerCase().trim();
-
     const user = await User.findOne({ email: normalizedEmail });
+
     if (!user) {
       return res.status(404).json({ message: "user not found" });
     }
 
-    const resetToken = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "15m" }
-    );
-
+    const resetToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "15m" });
     const frontendUrl = process.env.FRONTEND_URL || "https://theindofrenchias.netlify.app";
     const resetLink = `${frontendUrl}/resetpassword/${resetToken}`;
 
-    await sendEmail({
+    
+    sendEmail({
       to: user.email,
       subject: "Reset Your Password",
-      html: `
-        <h2>Password Reset</h2>
-        <p>Click below to reset your password:</p>
-        <a href="${resetLink}">${resetLink}</a>
-        <p>This link expires in 15 minutes.</p>
-      `,
-    });
+      html: `<h2>Password Reset</h2><p>Click below to reset your password:</p><a href="${resetLink}">${resetLink}</a>`
+    }).catch(err => console.error("SMTP background error:", err));
 
+    
     res.json({ message: "reset link sent" });
+    
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "email failed" });
+    res.status(500).json({ message: "server error" });
   }
 });
 
