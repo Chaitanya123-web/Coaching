@@ -6,40 +6,35 @@ export default function Course() {
   const { courseid } = useParams();
   const navigate = useNavigate();
 
-  const [videos, setVideos] = useState([]); // Initialized as empty array
+  const [course, setCourse] = useState(null);
+  const [videos, setVideos] = useState([]);
   const [enrolled, setEnrolled] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [paying, setPaying] = useState(false);
 
   useEffect(() => {
     const loadCourse = async () => {
       try {
         const user = await api.get("/auth/me");
 
-        // ADMIN → always allowed
+        // Fetch course details for price display
+        const allCourses = await api.get("/course");
+        const courseList = Array.isArray(allCourses) ? allCourses : (allCourses?.courses || []);
+        const found = courseList.find(c => c._id === courseid);
+        setCourse(found || null);
+
         if (user.role === "admin") {
           setEnrolled(true);
           const vids = await api.get(`/video/${courseid}`);
-          
-          /**
-           * PRODUCTION FIX: Strict Unwrapping
-           * Ensures we get the array even if wrapped in an object
-           */
-          const actualVideos = Array.isArray(vids) ? vids : (vids?.videos || []);
-          setVideos(actualVideos);
+          setVideos(Array.isArray(vids) ? vids : (vids?.videos || []));
           return;
         }
 
-        // STUDENT → check enrollment
         const status = await api.get(`/enroll/check/${courseid}`);
-
         if (status.enrolled) {
           setEnrolled(true);
           const vids = await api.get(`/video/${courseid}`);
-          
-          // Same safety unwrap here
-          const actualVideos = Array.isArray(vids) ? vids : (vids?.videos || []);
-          setVideos(actualVideos);
+          setVideos(Array.isArray(vids) ? vids : (vids?.videos || []));
         } else {
           setEnrolled(false);
           setVideos([]);
@@ -56,102 +51,315 @@ export default function Course() {
     loadCourse();
   }, [courseid]);
 
-  const enroll = async () => {
+  const handlePayment = async () => {
+    if (!course) return;
+    setPaying(true);
+
     try {
-      await api.post(`/enroll/enroll/${courseid}`);
-      window.location.reload(); 
+      // 1. Create order on backend
+      const { orderId, amount, currency } = await api.post("/payment/create-order", {
+        type: "course",
+        itemId: courseid,
+      });
+
+      // 2. Open Razorpay checkout
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount,
+        currency,
+        name: "The Indofrench IAS",
+        description: `Enroll: ${course.title}`,
+        order_id: orderId,
+        handler: async (response) => {
+          try {
+            // 3. Verify on backend
+            const result = await api.post("/payment/verify", {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              type: "course",
+              itemId: courseid,
+            });
+
+            if (result.success) {
+              setEnrolled(true);
+              window.location.reload();
+            }
+          } catch {
+            alert("Payment verification failed. Contact support.");
+          }
+        },
+        prefill: { name: "", email: "" },
+        theme: { color: "#1a3a5c" },
+        modal: {
+          ondismiss: () => setPaying(false),
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", () => {
+        alert("Payment failed. Please try again.");
+        setPaying(false);
+      });
+      rzp.open();
     } catch (err) {
-      alert("Enrollment failed. Please try again.");
+      console.error("Payment init error:", err);
+      alert("Could not initiate payment. Please try again.");
+      setPaying(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8f7eb]">
-        <div className="w-10 h-10 border-4 border-[#1f4f5a] border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-[#1f4f5a] font-bold tracking-tight">Fetching curriculum...</p>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", background:"#f5f3ee", fontFamily:"'DM Sans',sans-serif", gap:"1rem" }}>
+      <div style={{ width:36, height:36, border:"3px solid #1a3a5c", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.8s linear infinite" }} />
+      <p style={{ color:"#5a7a8a", fontSize:"0.88rem" }}>Fetching curriculum…</p>
+      <style>{`@keyframes spin { to { transform:rotate(360deg); } }`}</style>
+    </div>
+  );
 
   /* NOT ENROLLED */
   if (!enrolled) {
     return (
-      <div className="min-h-screen bg-[#f8f7eb] pt-40 px-6">
-        <div className="max-w-2xl mx-auto bg-white rounded-[2.5rem] shadow-2xl shadow-black/5 p-10 md:p-16 text-center border border-[#0b2a4a]/5">
-          <div className="w-20 h-20 bg-[#f2f1d5] rounded-3xl flex items-center justify-center mx-auto mb-8 text-[#0b2a4a]">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
+      <>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@400;500;600&display=swap');
+          .enroll-page {
+            min-height: 100vh;
+            background: #f5f3ee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6rem 1.5rem 3rem;
+            font-family: 'DM Sans', sans-serif;
+          }
+          .enroll-card {
+            background: #fff;
+            border-radius: 1.5rem;
+            border: 1px solid rgba(26,58,92,0.08);
+            box-shadow: 0 8px 40px rgba(26,58,92,0.1);
+            padding: 3rem 2.5rem;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+          }
+          .enroll-icon {
+            width: 64px; height: 64px;
+            background: #f5f3ee;
+            border-radius: 1.1rem;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.5rem;
+          }
+          .enroll-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem; font-weight: 900;
+            color: #1a3a5c; letter-spacing: -0.02em;
+            margin: 0 0 0.75rem;
+          }
+          .enroll-sub {
+            font-size: 0.88rem; color: #7a8a9a;
+            line-height: 1.7; margin: 0 0 2rem;
+          }
+          .enroll-price-row {
+            display: flex; align-items: center; justify-content: center;
+            gap: 0.5rem; margin-bottom: 1.75rem;
+          }
+          .enroll-price-label {
+            font-size: 0.65rem; font-weight: 700;
+            color: #9aabb8; letter-spacing: 0.15em; text-transform: uppercase;
+          }
+          .enroll-price {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem; font-weight: 900;
+            color: #1a3a5c; letter-spacing: -0.02em;
+          }
+          .enroll-btn {
+            width: 100%;
+            background: #1a3a5c; color: #f5f3ee;
+            border: none; border-radius: 100px;
+            padding: 1rem 2rem;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.82rem; font-weight: 700;
+            letter-spacing: 0.1em; text-transform: uppercase;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+            transition: background 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 16px rgba(26,58,92,0.22);
+          }
+          .enroll-btn:hover:not(:disabled) { background: #2a5a7c; box-shadow: 0 8px 24px rgba(26,58,92,0.3); }
+          .enroll-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+          .enroll-secure {
+            display: flex; align-items: center; justify-content: center;
+            gap: 0.4rem; margin-top: 1rem;
+            font-size: 0.65rem; color: #9aabb8; font-weight: 500;
+          }
+        `}</style>
+        <div className="enroll-page">
+          <div className="enroll-card">
+            <div className="enroll-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1a3a5c" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </div>
+            <h2 className="enroll-title">Access Restricted</h2>
+            <p className="enroll-sub">
+              This curriculum is exclusive to enrolled members. Unlock the full learning experience today.
+            </p>
+
+            {course && (
+              <div className="enroll-price-row">
+                <span className="enroll-price-label">One-time fee</span>
+                <span className="enroll-price">
+                  ₹{Number(course.price).toLocaleString("en-IN")}
+                </span>
+              </div>
+            )}
+
+            <button className="enroll-btn" onClick={handlePayment} disabled={paying}>
+              {paying ? (
+                <>
+                  <div style={{ width:14, height:14, border:"2px solid rgba(245,243,238,0.4)", borderTopColor:"#f5f3ee", borderRadius:"50%", animation:"spin 0.7s linear infinite" }} />
+                  Opening payment…
+                </>
+              ) : (
+                <>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+                  </svg>
+                  Pay & Enroll Now
+                </>
+              )}
+            </button>
+
+            <div className="enroll-secure">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              Secured by Razorpay · 256-bit encryption
+            </div>
           </div>
-          <h2 className="text-3xl md:text-4xl font-black text-[#0b2a4a] mb-4 tracking-tight">Access Restricted</h2>
-          <p className="text-[#2f6f7e] mb-10 text-lg font-medium">This curriculum is exclusive to enrolled members. Unlock the full learning experience today.</p>
-          <button
-            onClick={enroll}
-            className="w-full sm:w-auto bg-[#0b2a4a] text-[#f2f1d5] px-12 py-4 rounded-2xl font-black uppercase text-sm tracking-[0.2em] hover:bg-[#1f4f5a] transition-all shadow-xl active:scale-95"
-          >
-            Enroll in Batch
-          </button>
         </div>
-      </div>
+      </>
     );
   }
 
   /* ENROLLED / ADMIN VIEW */
   return (
-    <div className="min-h-screen bg-[#f8f7eb] pt-32 md:pt-40 pb-20 px-4 sm:px-6">
-      <div className="max-w-4xl mx-auto">
-        
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#6fa6b2] mb-2 block">Course Modules</span>
-            <h1 className="text-4xl md:text-5xl font-black text-[#0b2a4a] tracking-tighter">Your Curriculum</h1>
-          </div>
-          <p className="text-[#2f6f7e] font-bold text-sm bg-white px-4 py-2 rounded-full border border-[#0b2a4a]/5 shadow-sm">
-            {videos?.length || 0} Lessons Available
-          </p>
-        </div>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700&family=DM+Sans:wght@400;500;600&display=swap');
+        .cp-root {
+          min-height: 100vh; background: #f5f3ee;
+          padding: 5.5rem 1.25rem 3rem;
+          font-family: 'DM Sans', sans-serif;
+        }
+        .cp-inner { max-width: 860px; margin: 0 auto; }
+        .cp-header {
+          display: flex; align-items: flex-end;
+          justify-content: space-between;
+          margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;
+        }
+        .cp-eyebrow {
+          font-size: 0.6rem; font-weight: 700;
+          letter-spacing: 0.2em; text-transform: uppercase;
+          color: #c8a96e; margin-bottom: 0.4rem;
+        }
+        .cp-title {
+          font-family: 'Playfair Display', serif;
+          font-size: clamp(1.6rem, 4vw, 2.4rem);
+          font-weight: 700; color: #1a3a5c;
+          letter-spacing: -0.02em; margin: 0;
+        }
+        .cp-count {
+          background: #fff; border: 1px solid rgba(26,58,92,0.08);
+          border-radius: 100px; padding: 0.45rem 1rem;
+          font-size: 0.75rem; font-weight: 600; color: #5a7a8a;
+          white-space: nowrap;
+          box-shadow: 0 1px 6px rgba(26,58,92,0.05);
+        }
+        .cp-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        .cp-item {
+          background: #fff;
+          border: 1px solid rgba(26,58,92,0.07);
+          border-radius: 1rem;
+          padding: 1rem 1.25rem;
+          display: flex; align-items: center; gap: 1.1rem;
+          cursor: pointer;
+          transition: box-shadow 0.25s, border-color 0.25s, transform 0.2s;
+          box-shadow: 0 1px 6px rgba(26,58,92,0.04);
+        }
+        .cp-item:hover {
+          box-shadow: 0 6px 24px rgba(26,58,92,0.1);
+          border-color: rgba(200,169,110,0.3);
+          transform: translateX(4px);
+        }
+        .cp-thumb {
+          width: 80px; height: 52px; flex-shrink: 0;
+          background: #1a3a5c; border-radius: 0.65rem;
+          display: flex; align-items: center; justify-content: center;
+          color: rgba(245,243,238,0.6); font-size: 1.1rem;
+          transition: background 0.2s;
+        }
+        .cp-item:hover .cp-thumb { background: #2a5a7c; color: #c8a96e; }
+        .cp-item-info { flex: 1; min-width: 0; }
+        .cp-lesson-num {
+          font-size: 0.6rem; font-weight: 700;
+          letter-spacing: 0.15em; text-transform: uppercase;
+          color: #c8a96e; margin-bottom: 0.2rem;
+        }
+        .cp-lesson-title {
+          font-size: 0.92rem; font-weight: 600;
+          color: #1a3a5c; white-space: nowrap;
+          overflow: hidden; text-overflow: ellipsis;
+        }
+        .cp-lesson-sub {
+          font-size: 0.72rem; color: #9aabb8; margin-top: 0.15rem;
+        }
+        .cp-play-badge {
+          background: #f5f3ee; border: 1px solid rgba(26,58,92,0.08);
+          border-radius: 0.55rem; padding: 0.3rem 0.75rem;
+          font-size: 0.62rem; font-weight: 700;
+          color: #1a3a5c; letter-spacing: 0.1em;
+          text-transform: uppercase; flex-shrink: 0;
+          display: none;
+        }
+        @media (min-width: 600px) { .cp-play-badge { display: block; } }
+        .cp-empty {
+          background: #fff; border: 2px dashed rgba(26,58,92,0.1);
+          border-radius: 1rem; padding: 3rem 2rem; text-align: center;
+          color: #9aabb8; font-size: 0.85rem; font-style: italic;
+        }
+      `}</style>
 
-        {/* CRITICAL FIX: Ensure Array.isArray before calling .map */}
-        {!Array.isArray(videos) || videos.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-[#1f4f5a]/30">
-            <p className="text-[#2f6f7e] font-bold italic">Curriculum is being updated. Check back soon.</p>
+      <div className="cp-root">
+        <div className="cp-inner">
+          <div className="cp-header">
+            <div>
+              <p className="cp-eyebrow">Course Modules</p>
+              <h1 className="cp-title">Your Curriculum</h1>
+            </div>
+            <span className="cp-count">{videos.length} lesson{videos.length !== 1 ? "s" : ""} available</span>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4">
-            {videos.map((video, index) => (
-              <div
-                key={video._id}
-                onClick={() => navigate(`/video/${video._id}`)}
-                className="group flex flex-col sm:flex-row gap-5 items-center bg-white rounded-3xl p-4 sm:p-5 border border-[#0b2a4a]/5 cursor-pointer hover:shadow-xl hover:border-[#1f4f5a]/20 transition-all duration-300"
-              >
-                <div className="w-full sm:w-40 aspect-video bg-[#0b2a4a] rounded-2xl flex items-center justify-center text-[#f2f1d5] text-2xl relative overflow-hidden shrink-0">
-                  <span className="relative z-10 group-hover:scale-125 transition-transform duration-500">▶</span>
-                  <div className="absolute inset-0 bg-[#1f4f5a] opacity-0 group-hover:opacity-40 transition-opacity"></div>
-                </div>
 
-                <div className="flex-1 text-center sm:text-left">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
-                    <span className="text-[10px] font-black text-[#6fa6b2] uppercase tracking-widest">Lesson {index + 1}</span>
-                    <h3 className="text-xl font-bold text-[#0b2a4a] group-hover:text-[#1f4f5a] transition-colors line-clamp-1 italic sm:not-italic">
-                      {video.title}
-                    </h3>
+          {videos.length === 0 ? (
+            <div className="cp-empty">Curriculum is being updated. Check back soon.</div>
+          ) : (
+            <div className="cp-list">
+              {videos.map((video, index) => (
+                <div key={video._id} className="cp-item" onClick={() => navigate(`/video/${video._id}`)}>
+                  <div className="cp-thumb">▶</div>
+                  <div className="cp-item-info">
+                    <div className="cp-lesson-num">Lesson {index + 1}</div>
+                    <div className="cp-lesson-title">{video.title}</div>
+                    <div className="cp-lesson-sub">Recorded HD lesson</div>
                   </div>
-                  <p className="text-sm text-[#2f6f7e] font-medium opacity-70">
-                    Recorded high-definition lesson with deep conceptual clarity.
-                  </p>
+                  <span className="cp-play-badge">Play</span>
                 </div>
-
-                <div className="hidden md:block pr-4">
-                   <div className="text-[10px] font-black uppercase tracking-widest text-[#0b2a4a] bg-[#f8f7eb] px-3 py-1 rounded-lg border border-[#0b2a4a]/5">
-                     Play
-                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

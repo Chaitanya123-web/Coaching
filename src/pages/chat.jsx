@@ -1,6 +1,5 @@
 import Chatbox from "../components/chatbox";
-import { useEffect, useState } from "react";
-import api from "../services/api";
+import { useEffect } from "react";
 
 export default function Chat() {
   useEffect(() => {
@@ -9,10 +8,15 @@ export default function Chat() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#f8f7eb] flex items-center justify-center py-20 sm:py-24 px-4 sm:px-6">
-      <div className="w-full flex justify-center">
-        <Chatbox />
-      </div>
+    <div style={{
+      minHeight: "100vh",
+      background: "linear-gradient(160deg, #f5f3ee 0%, #eceae0 100%)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "5rem 1rem 2rem",
+    }}>
+      <Chatbox />
     </div>
   );
 }

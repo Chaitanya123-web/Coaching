@@ -12,11 +12,9 @@ export default function Profile() {
       try {
         const data = await api.get("/auth/me");
         setUser(data);
-        
-        // Load saved avatar from local storage if exists
         const savedAvatar = localStorage.getItem(`avatar_${data.email}`);
         if (savedAvatar) setAvatar(savedAvatar);
-      } catch (err) {
+      } catch {
         setError("Failed to load profile. Please sign in again.");
       } finally {
         setLoading(false);
@@ -30,137 +28,337 @@ export default function Profile() {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        const base64String = reader.result;
-        setAvatar(base64String);
-        localStorage.setItem(`avatar_${user.email}`, base64String);
+        const b64 = reader.result;
+        setAvatar(b64);
+        localStorage.setItem(`avatar_${user.email}`, b64);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8f7eb]">
-        <div className="w-10 h-10 border-4 border-[#1f4f5a] border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-[#1f4f5a] font-medium tracking-tight">Securing your data...</p>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", background:"#f5f3ee", fontFamily:"'DM Sans',sans-serif", gap:"1rem" }}>
+      <div style={{ width:38, height:38, border:"3px solid #1a3a5c", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.8s linear infinite" }} />
+      <p style={{ color:"#5a7a8a", fontSize:"0.88rem" }}>Securing your data…</p>
+      <style>{`@keyframes spin { to { transform:rotate(360deg); } }`}</style>
+    </div>
+  );
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8f7eb] text-red-600 font-semibold px-6 text-center">
-        {error}
-      </div>
-    );
-  }
+  if (error) return (
+    <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"#f5f3ee", color:"#b91c1c", fontFamily:"'DM Sans',sans-serif", fontSize:"0.9rem", padding:"2rem", textAlign:"center" }}>
+      {error}
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-[#f8f7eb] py-8 sm:py-12 px-4 sm:px-6">
-      <div className="max-w-4xl mx-auto">
-        
-        {/* HEADER SECTION */}
-        <div className="mb-6 sm:mb-8 text-center sm:text-left">
-          <h1 className="text-2xl sm:text-3xl font-black text-[#0b2a4a] tracking-tight">Account Settings</h1>
-          <p className="text-[#2f6f7e] text-xs sm:text-sm font-medium">Manage your personal information and profile picture.</p>
-        </div>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@400;500;600&display=swap');
 
-        {/* MAIN GRID */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-          
-          {/* LEFT COLUMN: AVATAR CARD */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-[1.5rem] sm:rounded-[2rem] shadow-xl shadow-black/5 p-6 sm:p-8 text-center border border-[#0b2a4a]/5">
-              <div className="relative inline-block mb-4 sm:mb-6">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-[1.5rem] sm:rounded-3xl bg-gradient-to-br from-[#1f4f5a] to-[#0b2a4a] text-[#f2f1d5] flex items-center justify-center overflow-hidden shadow-lg border-4 border-white">
-                  {avatar ? (
-                    <img src={avatar} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                <span className="text-3xl sm:text-4xl font-bold">
-                  {user?.name ? user.name.charAt(0).toUpperCase() : "I"}
-                </span>
-                  )}
+        .pf-root {
+          min-height: 100vh;
+          background: #f5f3ee;
+          font-family: 'DM Sans', sans-serif;
+          padding: 5.5rem 1.5rem 3rem;
+        }
+
+        .pf-inner {
+          max-width: 860px;
+          margin: 0 auto;
+        }
+
+        /* Page title */
+        .pf-page-title {
+          font-family: 'Playfair Display', serif;
+          font-size: clamp(1.6rem, 3vw, 2.2rem);
+          font-weight: 700;
+          color: #1a3a5c;
+          letter-spacing: -0.02em;
+          margin: 0 0 0.3rem;
+        }
+
+        .pf-page-sub {
+          font-size: 0.82rem;
+          color: #7a8a9a;
+          margin: 0 0 2.5rem;
+        }
+
+        /* Grid */
+        .pf-grid {
+          display: grid;
+          grid-template-columns: 220px 1fr;
+          gap: 1.5rem;
+          align-items: start;
+        }
+
+        @media (max-width: 680px) {
+          .pf-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Card shared */
+        .pf-card {
+          background: #fff;
+          border-radius: 1.25rem;
+          border: 1px solid rgba(26,58,92,0.08);
+          box-shadow: 0 2px 16px rgba(26,58,92,0.05);
+        }
+
+        /* Avatar card */
+        .pf-avatar-card {
+          padding: 2rem 1.5rem;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0;
+          text-align: center;
+        }
+
+        .pf-avatar-wrap {
+          position: relative;
+          margin-bottom: 1.1rem;
+        }
+
+        .pf-avatar {
+          width: 88px;
+          height: 88px;
+          border-radius: 1.1rem;
+          background: linear-gradient(145deg, #1a3a5c, #2a5a7c);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: 'Playfair Display', serif;
+          font-size: 2rem;
+          font-weight: 700;
+          color: #f5f3ee;
+          overflow: hidden;
+          border: 3px solid #fff;
+          box-shadow: 0 4px 16px rgba(26,58,92,0.15);
+        }
+
+        .pf-avatar img { width:100%; height:100%; object-fit:cover; }
+
+        .pf-avatar-edit {
+          position: absolute;
+          bottom: -6px;
+          right: -6px;
+          width: 30px;
+          height: 30px;
+          background: #c8a96e;
+          border: 2.5px solid #fff;
+          border-radius: 0.55rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: background 0.18s;
+          box-shadow: 0 2px 8px rgba(26,58,92,0.15);
+        }
+
+        .pf-avatar-edit:hover { background: #b8996e; }
+
+        .pf-user-name {
+          font-family: 'Playfair Display', serif;
+          font-size: 1.1rem;
+          font-weight: 700;
+          color: #1a3a5c;
+          letter-spacing: -0.01em;
+          margin-bottom: 0.25rem;
+        }
+
+        .pf-role-badge {
+          display: inline-block;
+          background: rgba(200,169,110,0.12);
+          border: 1px solid rgba(200,169,110,0.3);
+          color: #c8a96e;
+          font-size: 0.6rem;
+          font-weight: 700;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          padding: 0.28rem 0.8rem;
+          border-radius: 100px;
+          margin-bottom: 1.5rem;
+        }
+
+        .pf-divider {
+          width: 100%;
+          height: 1px;
+          background: rgba(26,58,92,0.07);
+          margin: 0 0 1.25rem;
+        }
+
+        .pf-logout-btn {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          background: rgba(239,68,68,0.06);
+          border: 1px solid rgba(239,68,68,0.15);
+          border-radius: 0.65rem;
+          padding: 0.6rem 1rem;
+          cursor: pointer;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 0.78rem;
+          font-weight: 600;
+          color: #ef4444;
+          width: 100%;
+          justify-content: center;
+          transition: background 0.18s;
+        }
+
+        .pf-logout-btn:hover { background: rgba(239,68,68,0.1); }
+
+        /* Info card */
+        .pf-info-card {
+          padding: 2rem;
+        }
+
+        .pf-info-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 1.75rem;
+          flex-wrap: wrap;
+          gap: 0.75rem;
+        }
+
+        .pf-info-title {
+          font-family: 'Playfair Display', serif;
+          font-size: 1.05rem;
+          font-weight: 700;
+          color: #1a3a5c;
+          margin: 0;
+          letter-spacing: -0.01em;
+        }
+
+        .pf-verified {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          background: rgba(76,175,134,0.08);
+          border: 1px solid rgba(76,175,134,0.2);
+          color: #2d8a66;
+          font-size: 0.62rem;
+          font-weight: 700;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          padding: 0.3rem 0.8rem;
+          border-radius: 100px;
+        }
+
+        .pf-verified-dot {
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          background: #4caf86;
+        }
+
+        /* Fields grid */
+        .pf-fields {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1.5rem;
+        }
+
+        @media (max-width: 480px) {
+          .pf-fields { grid-template-columns: 1fr; }
+        }
+
+        .pf-field {}
+
+        .pf-field-label {
+          font-size: 0.6rem;
+          font-weight: 700;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: #9aabb8;
+          margin-bottom: 0.4rem;
+        }
+
+        .pf-field-value {
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: #1a3a5c;
+          padding-bottom: 0.65rem;
+          border-bottom: 1px solid rgba(26,58,92,0.07);
+          word-break: break-word;
+        }
+
+        .pf-privacy {
+          margin-top: 1.5rem;
+          padding-top: 1.25rem;
+          border-top: 1px solid rgba(26,58,92,0.07);
+          font-size: 0.7rem;
+          color: #9aabb8;
+          font-style: italic;
+          text-align: right;
+        }
+      `}</style>
+
+      <div className="pf-root">
+        <div className="pf-inner">
+          <h1 className="pf-page-title">Account Settings</h1>
+          <p className="pf-page-sub">Manage your personal information and profile picture.</p>
+
+          <div className="pf-grid">
+
+            {/* AVATAR CARD */}
+            <div className="pf-card pf-avatar-card">
+              <div className="pf-avatar-wrap">
+                <div className="pf-avatar">
+                  {avatar ? <img src={avatar} alt="Profile" /> : user?.name?.charAt(0).toUpperCase() ?? "I"}
                 </div>
-                
-                <input 
-                  type="file" 
-                  id="avatarInput" 
-                  hidden 
-                  accept="image/*" 
-                  onChange={handleAvatarChange} 
-                />
-                
-                <label 
-                  htmlFor="avatarInput"
-                  className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 w-8 h-8 sm:w-10 sm:h-10 bg-[#0b2a4a] border-4 border-white rounded-xl sm:rounded-2xl shadow-md flex items-center justify-center cursor-pointer hover:bg-[#1f4f5a] transition-all"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                <input type="file" id="avatarInput" hidden accept="image/*" onChange={handleAvatarChange} />
+                <label htmlFor="avatarInput" className="pf-avatar-edit" title="Change photo">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
                   </svg>
                 </label>
               </div>
-              
-              <h2 className="text-lg sm:text-xl font-bold text-[#0b2a4a] leading-tight mb-1">{user.name}</h2>
-              <p className="text-[#6fa6b2] text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">{user.role}</p>
-            </div>
-          </div>
 
-          {/* RIGHT COLUMN: DETAILS SECTION */}
-          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-            
-            <div className="bg-white rounded-[1.5rem] sm:rounded-[2rem] shadow-xl shadow-black/5 p-6 sm:p-10 border border-[#0b2a4a]/5">
-              <div className="flex flex-col sm:flex-row items-center justify-between mb-8 sm:mb-10 gap-3 sm:gap-0">
-                <h3 className="text-base sm:text-lg font-bold text-[#0b2a4a]">Personal Information</h3>
-                <span className="text-[8px] sm:text-[10px] font-black uppercase text-[#1f4f5a] bg-[#f2f1d5] px-3 sm:px-4 py-1 sm:py-1.5 rounded-full tracking-wider">Identity Verified</span>
-              </div>
+              <div className="pf-user-name">{user.name}</div>
+              <div className="pf-role-badge">{user.role}</div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 sm:gap-y-10 gap-x-8 sm:gap-x-12">
-                <div>
-                  <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-[#6fa6b2] mb-1 sm:mb-2 text-center sm:text-left">Display Name</p>
-                  <p className="text-sm sm:text-md font-bold text-[#0b2a4a] border-b border-[#f8f7eb] pb-2 text-center sm:text-left">{user.name}</p>
-                </div>
+              <div className="pf-divider" />
 
-                <div>
-                  <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-[#6fa6b2] mb-1 sm:mb-2 text-center sm:text-left">Email Address</p>
-                  <p className="text-sm sm:text-md font-bold text-[#0b2a4a] border-b border-[#f8f7eb] pb-2 text-center sm:text-left">{user.email}</p>
-                </div>
-
-                <div>
-                  <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-[#6fa6b2] mb-1 sm:mb-2 text-center sm:text-left">Account Level</p>
-                  <p className="text-sm sm:text-md font-bold text-[#0b2a4a] border-b border-[#f8f7eb] pb-2 capitalize text-center sm:text-left">{user.role}</p>
-                </div>
-
-                <div>
-                  <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-[#6fa6b2] mb-1 sm:mb-2 text-center sm:text-left">Joining Date</p>
-                  <p className="text-sm sm:text-md font-bold text-[#0b2a4a] border-b border-[#f8f7eb] pb-2 text-center sm:text-left">
-                    {new Date(user.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* ACTION SECTION */}
-            <div className="flex flex-col sm:flex-row items-center justify-between px-2 sm:px-4 gap-4 sm:gap-0">
-              <button 
-                onClick={() => { localStorage.removeItem("token"); window.location.href = "/login"; }}
-                className="group flex items-center gap-2 text-red-500 font-bold text-xs sm:text-sm hover:text-red-700 transition-colors"
-              >
-                <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-red-50 flex items-center justify-center group-hover:bg-red-100 transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                </span>
-                Terminate Session
+              <button className="pf-logout-btn"
+                onClick={() => { localStorage.removeItem("token"); window.location.href = "/login"; }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                Sign Out
               </button>
-              
-              <p className="text-[8px] sm:text-[10px] text-[#6fa6b2] font-medium italic opacity-70">Privacy Protected Platform</p>
+            </div>
+
+            {/* INFO CARD */}
+            <div className="pf-card pf-info-card">
+              <div className="pf-info-header">
+                <h3 className="pf-info-title">Personal Information</h3>
+                <div className="pf-verified">
+                  <span className="pf-verified-dot" />
+                  Identity Verified
+                </div>
+              </div>
+
+              <div className="pf-fields">
+                {[
+                  ["Display Name", user.name],
+                  ["Email Address", user.email],
+                  ["Account Level", user.role],
+                  ["Member Since", new Date(user.createdAt).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" })],
+                ].map(([label, value]) => (
+                  <div key={label} className="pf-field">
+                    <div className="pf-field-label">{label}</div>
+                    <div className="pf-field-value">{value}</div>
+                  </div>
+                ))}
+              </div>
+
+              <p className="pf-privacy">Privacy Protected Platform</p>
             </div>
 
           </div>
-
         </div>
       </div>
-    </div>
+    </>
   );
 }

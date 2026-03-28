@@ -13,7 +13,7 @@ const sendEmail = async ({ to, subject, html }) => {
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,
-  });
+  }); 
 
   transporter.verify(function (error, success) {
     if (error) {

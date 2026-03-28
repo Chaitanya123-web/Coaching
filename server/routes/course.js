@@ -14,9 +14,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-/** * FIX: Changed 'imageUpload.single' to 'thumbnailUpload.single' 
- * to match your import and newly created middleware.
- */
+
 router.post("/create", protect, thumbnailUpload.single("image"), async (req, res) => {
   if (req.user.role !== "admin") return res.sendStatus(403);
   
